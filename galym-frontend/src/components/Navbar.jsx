@@ -1,33 +1,60 @@
-import { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
-
-import { AuthContext } from "../context/AuthContext";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function Navbar() {
-    const { token, logout } = useContext(AuthContext);
+
+    const location = useLocation();
     const navigate = useNavigate();
 
+    const token = localStorage.getItem("token");
+
     function handleLogout() {
-        logout();
-        navigate("/");
+
+        localStorage.removeItem("token");
+
+        navigate("/login");
     }
 
     return (
         <nav>
-            <Link to="/">Galym Community</Link>
 
-            <Link to="/opportunities">Opportunities</Link>
+            <Link to="/">
+                Galym
+            </Link>
 
-            {token ? (
-                <button onClick={handleLogout}>
-                    Logout
-                </button>
+            {" | "}
+
+            <Link to="/opportunities">
+                Opportunities
+            </Link>
+
+            {" | "}
+
+            {!token ? (
+                <>
+                    <Link to="/login">
+                        Login
+                    </Link>
+
+                    {" | "}
+
+                    <Link to="/register">
+                        Register
+                    </Link>
+                </>
             ) : (
                 <>
-                    <Link to="/login">Login</Link>
-                    <Link to="/register">Register</Link>
+                    <Link to="/admin/opportunities">
+                        Admin
+                    </Link>
+
+                    {" | "}
+
+                    <button onClick={handleLogout}>
+                        Logout
+                    </button>
                 </>
             )}
+
         </nav>
     );
 }

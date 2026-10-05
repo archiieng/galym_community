@@ -1,66 +1,118 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import { registerUser } from "../api/auth";
 
 function Register() {
+
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+
     const navigate = useNavigate();
 
     async function handleSubmit(e) {
+
         e.preventDefault();
 
         try {
-            await registerUser(name, email, password);
 
-            console.log("Registration successful");
+            setLoading(true);
+            setError("");
+
+            await registerUser(
+                name,
+                email,
+                password
+            );
 
             navigate("/login");
 
         } catch (error) {
-            console.log(error.message);
+
+            setError(error.message);
+
+        } finally {
+
+            setLoading(false);
         }
     }
 
     return (
         <div>
+
             <h1>Register</h1>
 
             <form onSubmit={handleSubmit}>
+
                 <div>
+
                     <label>Name</label>
+
                     <input
                         type="text"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={(e) =>
+                            setName(e.target.value)
+                        }
+                        required
                     />
+
                 </div>
 
                 <div>
+
                     <label>Email</label>
+
                     <input
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) =>
+                            setEmail(e.target.value)
+                        }
+                        required
                     />
+
                 </div>
 
                 <div>
+
                     <label>Password</label>
+
                     <input
                         type="password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) =>
+                            setPassword(e.target.value)
+                        }
+                        required
                     />
+
                 </div>
 
-                <button type="submit">
-                    Register
+                {error && (
+                    <p>{error}</p>
+                )}
+
+                <button
+                    type="submit"
+                    disabled={loading}
+                >
+                    {loading ? "Creating account..." : "Register"}
                 </button>
+
             </form>
+
+            <p>
+                Already have an account?{" "}
+                <Link to="/login">
+                    Login
+                </Link>
+            </p>
+
         </div>
     );
 }

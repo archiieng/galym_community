@@ -6,7 +6,6 @@ function Opportunities() {
     const [opportunities, setOpportunities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-
     const [type, setType] = useState("");
     const [country, setCountry] = useState("");
     const [city, setCity] = useState("");
