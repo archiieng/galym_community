@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The Kazakh letter Ғ, first letter of "ғалым" (scholar): sky-blue tile, gold crossbar. -->
+  <rect width="64" height="64" rx="14" fill="#0A6C8F" />
+  <path d="M21 14h26v9H30v27h-9z" fill="#fff" />
+  <rect x="12" y="30" width="27" height="7" rx="1" fill="#F7C331" />
+</svg>

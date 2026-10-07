@@ -1,6 +1,5 @@
 package next.galym_community.security;
 
-
 import next.galym_community.entity.UserEntity;
 import next.galym_community.repository.UserRepository;
 import org.springframework.security.core.userdetails.User;
@@ -12,15 +11,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
+
     public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException("User not found"));
+        UserEntity user =
+                userRepository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         return User.builder()
                 .username(user.getEmail())

@@ -1,69 +1,94 @@
 package next.galym_community.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import next.galym_community.dto.GalymResponse;
 import next.galym_community.entity.GalymEntity;
 import next.galym_community.model.enums.GalymStatus;
 import next.galym_community.model.enums.GalymType;
+import next.galym_community.service.GalymService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
+@Transactional
 class GalymRepositoryTest {
+    private static final LocalDate NEXT_YEAR = LocalDate.now().plusYears(1);
 
-    @Autowired
-    private GalymRepository galymRepository;
+    @Autowired private GalymRepository galymRepository;
+    @Autowired private GalymService galymService;
+
+    // Every row but the first differs from it in exactly one way, so each filter is
+    // the only thing keeping its row out of the result.
+    @BeforeEach
+    void saveOpportunities() {
+        save("Zqx DAAD Scholarship", "Test-Germany", true, GalymStatus.PUBLISHED, NEXT_YEAR);
+        save("Zqx Unfunded", "Test-Germany", false, GalymStatus.PUBLISHED, NEXT_YEAR);
+        save("Zqx Paris Internship", "Test-France", true, GalymStatus.PUBLISHED, NEXT_YEAR);
+        save("Zqx Draft", "Test-Germany", true, GalymStatus.DRAFT, NEXT_YEAR);
+        save(
+                "Zqx Expired",
+                "Test-Germany",
+                true,
+                GalymStatus.PUBLISHED,
+                LocalDate.now().minusDays(1));
+    }
 
     @Test
-    void filtersOpportunitiesByCountryAndScholarship() {
-        // Opportunity 1: Germany, has scholarship
-        GalymEntity galym1 = new GalymEntity();
-        galym1.setTitle("DAAD Scholarship");
-        galym1.setType(GalymType.SCHOLARSHIP);
-        galym1.setCountry("Germany");
-        galym1.setCity("Berlin");
-        galym1.setApplicationDeadline(LocalDate.of(2027, 3, 1));
-        galym1.setStatus(GalymStatus.PUBLISHED);
-        galym1.setHasScholarship(true);
-        galymRepository.save(galym1);
+    void filtersByCountryAndFundingAndHidesDraftsAndExpired() {
+        List<GalymResponse> results =
+                galymService.searchPublished(null, null, "test-GERMANY", null, null, true);
 
-        // Opportunity 2: France, no scholarship
-        GalymEntity galym2 = new GalymEntity();
-        galym2.setTitle("Paris Internship");
-        galym2.setType(GalymType.INTERNSHIP);
-        galym2.setCountry("France");
-        galym2.setCity("Paris");
-        galym2.setApplicationDeadline(LocalDate.of(2027, 3, 1));
-        galym2.setStatus(GalymStatus.PUBLISHED);
-        galym2.setHasScholarship(false);
-        galymRepository.save(galym2);
+        assertThat(results)
+                .extracting(GalymResponse::title)
+                .containsExactly("Zqx DAAD Scholarship");
+    }
 
-        // Search: only Germany, ignore everything else
-        List<GalymEntity> results = galymRepository.search(
-                GalymStatus.PUBLISHED,
-                LocalDate.now(),
-                null,
-                "Germany",
-                null,
-                null,
-                true
-        );
+    @Test
+    void keywordMatchesPartOfTheTitle() {
+        List<GalymResponse> results =
+                galymService.searchPublished(null, "zqx paris", null, null, null, null);
 
-        System.out.println("RESULT SIZE = " + results.size());
+        assertThat(results)
+                .extracting(GalymResponse::title)
+                .containsExactly("Zqx Paris Internship");
+    }
 
-        for (GalymEntity g : results) {
-            System.out.println(
-                    "Title: " + g.getTitle() +
-                            ", Country: " + g.getCountry() +
-                            ", Scholarship: " + g.isHasScholarship()
-            );
-        }
+    @Test
+    void likeWildcardsInTheKeywordAreTakenLiterally() {
+        assertThat(galymService.searchPublished(null, "zqx%intern", null, null, null, null))
+                .isEmpty();
+        assertThat(galymService.searchPublished(null, "zqx_paris", null, null, null, null))
+                .isEmpty();
+    }
 
-        assertThat(results).hasSize(1);
-        assertThat(results.get(0).getTitle()).isEqualTo("DAAD Scholarship");
+    private void save(
+            String title,
+            String country,
+            boolean hasScholarship,
+            GalymStatus status,
+            LocalDate deadline) {
+        GalymEntity galym = new GalymEntity();
+        galym.setTitle(title);
+        galym.setDescription("description");
+        galym.setType(GalymType.SCHOLARSHIP);
+        galym.setCountry(country);
+        galym.setCity("city");
+        galym.setOrganizationName("organization");
+        galym.setEligibility("eligibility");
+        galym.setApplicationInstructions("instructions");
+        galym.setApplicationDeadline(deadline);
+        galym.setFundingInfo("funding");
+        galym.setHasScholarship(hasScholarship);
+        galym.setStatus(status);
+        galym.setCreatedAt(LocalDateTime.now());
+        galym.setUpdatedAt(LocalDateTime.now());
+        galymRepository.save(galym);
     }
 }

@@ -1,10 +1,10 @@
 package next.galym_community.service;
 
-import jakarta.validation.ValidationException;
 import next.galym_community.dto.login_and_register.LoginRequest;
 import next.galym_community.entity.UserEntity;
 import next.galym_community.repository.UserRepository;
 import next.galym_community.security.JwtService;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,25 +17,34 @@ public class AuthService {
     private final JwtService jwtService;
 
     public AuthService(
-            UserRepository userRepository,
-            PasswordEncoder passwordEncoder,
-            JwtService jwtService) {
+            UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
 
-    public String login(LoginRequest request){
-        UserEntity user = userRepository.findByEmail(request.email())
-                .orElseThrow(()-> new ValidationException("Invalid email or password"));
-        if(!passwordEncoder.matches(request.password(), user.getPasswordHash())){
-            throw new ValidationException("Invalid password");
-        }
-        UserDetails userDetails = User.builder()
-                .username(user.getEmail())
-                .password(user.getPasswordHash())
-                .roles(user.getRole().name())
-                .build();
+    public String login(LoginRequest request) {
+        // Same answer for an unknown email and a wrong password, so the response
+        // does not reveal which accounts exist.
+        // The spelling as typed is tried first for the rare account registered before
+        // emails were lower-cased whose address could not be converted.
+        String typed = request.email().trim();
+        UserEntity user =
+                userRepository
+                        .findByEmail(typed)
+                        .or(() -> userRepository.findByEmail(UserService.normalize(typed)))
+                        .filter(
+                                u ->
+                                        passwordEncoder.matches(
+                                                request.password(), u.getPasswordHash()))
+                        .orElseThrow(
+                                () -> new BadCredentialsException("Invalid email or password"));
+        UserDetails userDetails =
+                User.builder()
+                        .username(user.getEmail())
+                        .password(user.getPasswordHash())
+                        .roles(user.getRole().name())
+                        .build();
         return jwtService.generateToken(userDetails);
     }
 }
