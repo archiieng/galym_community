@@ -1,14 +1,10 @@
 package next.galym_community.entity;
 
-
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotBlank;
-import next.galym_community.model.enums.GalymStatus;
-import next.galym_community.model.enums.GalymType;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import next.galym_community.model.enums.GalymStatus;
+import next.galym_community.model.enums.GalymType;
 
 @Entity
 @Table(name = "Galym")
@@ -17,28 +13,21 @@ public class GalymEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-    @NotBlank
+
     private String title;
-    @NotBlank
     private String description;
+
     @Enumerated(EnumType.STRING)
     private GalymType type;
 
-    @NotBlank
     private String country;
-    @NotBlank
     private String city;
-    @NotBlank
     private String organizationName;
 
-    @NotBlank
     private String eligibility;
-    @NotBlank
     private String applicationInstructions;
-    @Future
     private LocalDate applicationDeadline;
 
-    @NotBlank
     private String fundingInfo;
     private boolean hasScholarship;
     private String applicationLink;
@@ -52,42 +41,6 @@ public class GalymEntity {
     private LocalDateTime updatedAt;
 
     public GalymEntity() {}
-
-    public GalymEntity(Long id,
-                       String title,
-                       String description,
-                       GalymType type,
-                       String country,
-                       String city,
-                       String organizationName,
-                       String eligibility,
-                       String applicationInstructions,
-                       LocalDate applicationDeadline,
-                       String fundingInfo,
-                       boolean hasScholarship,
-                       String applicationLink,
-                       GalymStatus status,
-                       Long createdByUserId,
-                       LocalDateTime createdAt,
-                       LocalDateTime updatedAt) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.type = type;
-        this.country = country;
-        this.city = city;
-        this.organizationName = organizationName;
-        this.eligibility = eligibility;
-        this.applicationInstructions = applicationInstructions;
-        this.applicationDeadline = applicationDeadline;
-        this.fundingInfo = fundingInfo;
-        this.hasScholarship = hasScholarship;
-        this.applicationLink = applicationLink;
-        this.status = status;
-        this.createdByUserId = createdByUserId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
     public Long getId() {
         return id;

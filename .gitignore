@@ -17,7 +17,5 @@ target/
 .DS_Store
 Thumbs.db
 
-galym_community/src/main/resources/application.properties
-
 # Graphify output
 graphify-out/

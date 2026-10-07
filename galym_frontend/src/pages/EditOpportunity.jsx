@@ -1,103 +1,64 @@
-import {
-    useEffect,
-    useState
-} from "react";
+import { useEffect, useState } from "react";
+
+import { useNavigate, useParams } from "react-router-dom";
+
+import OpportunityForm from "../components/OpportunityForm";
 
 import {
-    useNavigate,
-    useParams
-} from "react-router-dom";
-
-import OpportunityForm
-    from "../components/OpportunityForm";
-
-import {
-    getAdminOpportunityById,
-    updateOpportunity
+  getAdminOpportunityById,
+  updateOpportunity,
 } from "../api/adminOpportunities";
 
 function EditOpportunity() {
+  const { id } = useParams();
 
-    const { id } = useParams();
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
+  const [opportunity, setOpportunity] = useState(null);
 
-    const [opportunity, setOpportunity] =
-        useState(null);
+  const [error, setError] = useState("");
 
-    const [error, setError] =
-        useState("");
+  useEffect(() => {
+    async function loadOpportunity() {
+      try {
+        const data = await getAdminOpportunityById(id);
 
-    useEffect(() => {
-
-        async function loadOpportunity() {
-
-            try {
-
-                const data =
-                    await getAdminOpportunityById(
-                        id
-                    );
-
-                setOpportunity(data);
-
-            } catch (error) {
-
-                setError(error.message);
-            }
-        }
-
-        loadOpportunity();
-
-    }, [id]);
-
-    async function handleUpdate(formData) {
-
-        try {
-
-            await updateOpportunity(
-                id,
-                formData
-            );
-
-            navigate(
-                "/admin/opportunities"
-            );
-
-        } catch (error) {
-
-            setError(error.message);
-        }
+        setOpportunity(data);
+      } catch (error) {
+        setError(error.message);
+      }
     }
 
-    if (!opportunity) {
+    loadOpportunity();
+  }, [id]);
 
-        return (
-            <p>
-                {error || "Loading..."}
-            </p>
-        );
+  async function handleUpdate(formData) {
+    try {
+      await updateOpportunity(id, formData);
+
+      navigate("/admin/opportunities");
+    } catch (error) {
+      setError(error.message);
     }
+  }
 
-    return (
-        <div>
+  if (!opportunity) {
+    return <p>{error || "Loading..."}</p>;
+  }
 
-            <h1>
-                Edit Opportunity
-            </h1>
+  return (
+    <div>
+      <h1>Edit Opportunity</h1>
 
-            {error && (
-                <p>{error}</p>
-            )}
+      {error && <p className="error">{error}</p>}
 
-            <OpportunityForm
-                initialData={opportunity}
-                onSubmit={handleUpdate}
-                buttonText="Save Changes"
-            />
-
-        </div>
-    );
+      <OpportunityForm
+        initialData={opportunity}
+        onSubmit={handleUpdate}
+        buttonText="Save Changes"
+      />
+    </div>
+  );
 }
 
 export default EditOpportunity;

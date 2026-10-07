@@ -1,58 +1,39 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import OpportunityForm
-    from "../components/OpportunityForm";
+import OpportunityForm from "../components/OpportunityForm";
 
-import {
-    createOpportunity
-} from "../api/adminOpportunities";
+import { createOpportunity } from "../api/adminOpportunities";
 
 function CreateOpportunity() {
+  const navigate = useNavigate();
 
-    const navigate = useNavigate();
+  const [error, setError] = useState("");
 
-    const [error, setError] =
-        useState("");
+  async function handleCreate(formData) {
+    try {
+      setError("");
 
-    async function handleCreate(formData) {
+      await createOpportunity(formData);
 
-        try {
-
-            setError("");
-
-            await createOpportunity(
-                formData
-            );
-
-            navigate(
-                "/admin/opportunities"
-            );
-
-        } catch (error) {
-
-            setError(error.message);
-        }
+      navigate("/admin/opportunities");
+    } catch (error) {
+      setError(error.message);
     }
+  }
 
-    return (
-        <div>
+  return (
+    <div>
+      <h1>Create Opportunity</h1>
 
-            <h1>
-                Create Opportunity
-            </h1>
+      {error && <p className="error">{error}</p>}
 
-            {error && (
-                <p>{error}</p>
-            )}
-
-            <OpportunityForm
-                onSubmit={handleCreate}
-                buttonText="Create Opportunity"
-            />
-
-        </div>
-    );
+      <OpportunityForm
+        onSubmit={handleCreate}
+        buttonText="Create Opportunity"
+      />
+    </div>
+  );
 }
 
 export default CreateOpportunity;

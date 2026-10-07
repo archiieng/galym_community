@@ -1,62 +1,20 @@
-const BASE_URL = "http://localhost:8080";
+import { request } from "./client";
 
-export async function getOpportunities(filters = {}) {
+export function getOpportunities(filters = {}) {
+  const params = new URLSearchParams();
 
-    const params = new URLSearchParams();
-
-    if (filters.type) {
-        params.append("type", filters.type);
+  // Empty filters are left out so the backend treats them as "any".
+  for (const [name, value] of Object.entries(filters)) {
+    if (value !== "" && value !== undefined) {
+      params.append(name, value);
     }
+  }
 
-    if (filters.country) {
-        params.append("country", filters.country);
-    }
+  const query = params.toString();
 
-    if (filters.city) {
-        params.append("city", filters.city);
-    }
-
-    if (filters.organizationName) {
-        params.append(
-            "organizationName",
-            filters.organizationName
-        );
-    }
-
-    if (
-        filters.hasScholarship !== "" &&
-        filters.hasScholarship !== undefined
-    ) {
-        params.append(
-            "hasScholarship",
-            filters.hasScholarship
-        );
-    }
-
-    const query = params.toString();
-
-    const url = query
-        ? `${BASE_URL}/galym?${query}`
-        : `${BASE_URL}/galym`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-        throw new Error("Failed to load opportunities");
-    }
-
-    return response.json();
+  return request(query ? `/galym?${query}` : "/galym");
 }
 
-export async function getOpportunityById(id) {
-
-    const response = await fetch(
-        `${BASE_URL}/galym/${id}`
-    );
-
-    if (!response.ok) {
-        throw new Error("Opportunity not found");
-    }
-
-    return response.json();
+export function getOpportunityById(id) {
+  return request(`/galym/${id}`);
 }

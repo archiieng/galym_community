@@ -1,141 +1,132 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 
+import { getOpportunityById } from "../api/opportunities";
 import {
-    getOpportunityById
-} from "../api/opportunities";
+  getSavedOpportunities,
+  saveOpportunity,
+  unsaveOpportunity,
+} from "../api/profile";
+import { AuthContext } from "../context/AuthContext";
+import { OPPORTUNITY_TYPES } from "../opportunityTypes";
 
 function OpportunityDetail() {
+  const { id } = useParams();
+  const { token } = useContext(AuthContext);
 
-    const { id } = useParams();
+  const [opportunity, setOpportunity] = useState(null);
 
-    const [opportunity, setOpportunity] =
-        useState(null);
+  const [loading, setLoading] = useState(true);
 
-    const [loading, setLoading] =
-        useState(true);
+  const [error, setError] = useState("");
 
-    const [error, setError] =
-        useState("");
+  const [saved, setSaved] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
+    getOpportunityById(id)
+      .then(setOpportunity)
+      .catch((error) => setError(error.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
-        async function loadOpportunity() {
+  useEffect(() => {
+    if (!token) return;
 
-            try {
+    getSavedOpportunities()
+      .then((list) => setSaved(list.some((item) => String(item.id) === id)))
+      // Not knowing only means the button starts as "Save".
+      .catch(() => {});
+  }, [id, token]);
 
-                setLoading(true);
+  async function handleToggleSaved() {
+    try {
+      await (saved ? unsaveOpportunity(id) : saveOpportunity(id));
 
-                const data =
-                    await getOpportunityById(id);
-
-                setOpportunity(data);
-
-            } catch (error) {
-
-                setError(error.message);
-
-            } finally {
-
-                setLoading(false);
-            }
-        }
-
-        loadOpportunity();
-
-    }, [id]);
-
-    if (loading) {
-        return <p>Loading...</p>;
+      setSaved(!saved);
+    } catch (error) {
+      setError(error.message);
     }
+  }
 
-    if (error) {
-        return <p>{error}</p>;
-    }
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
-    if (!opportunity) {
-        return <p>Opportunity not found.</p>;
-    }
+  if (!opportunity) {
+    return <p className="error">{error || "Opportunity not found."}</p>;
+  }
 
-    return (
-        <div>
+  return (
+    <div>
+      <Link to="/opportunities">Back</Link>
 
-            <Link to="/opportunities">
-                Back
-            </Link>
+      <h1>{opportunity.title}</h1>
 
-            <h1>
-                {opportunity.title}
-            </h1>
+      {error && <p className="error">{error}</p>}
 
-            <p>
-                <strong>Type:</strong>{" "}
-                {opportunity.type}
-            </p>
+      <p>
+        <strong>Type:</strong> {OPPORTUNITY_TYPES[opportunity.type]}
+      </p>
 
-            <p>
-                <strong>Description:</strong>{" "}
-                {opportunity.description}
-            </p>
+      <p>
+        <strong>Description:</strong> {opportunity.description}
+      </p>
 
-            <p>
-                <strong>Organization:</strong>{" "}
-                {opportunity.organizationName}
-            </p>
+      <p>
+        <strong>Organization:</strong> {opportunity.organizationName}
+      </p>
 
-            <p>
-                <strong>Country:</strong>{" "}
-                {opportunity.country}
-            </p>
+      <p>
+        <strong>Country:</strong> {opportunity.country}
+      </p>
 
-            <p>
-                <strong>City:</strong>{" "}
-                {opportunity.city}
-            </p>
+      <p>
+        <strong>City:</strong> {opportunity.city}
+      </p>
 
-            <p>
-                <strong>Eligibility:</strong>{" "}
-                {opportunity.eligibility}
-            </p>
+      <p>
+        <strong>Eligibility:</strong> {opportunity.eligibility}
+      </p>
 
-            <p>
-                <strong>
-                    Application instructions:
-                </strong>{" "}
-                {opportunity.applicationInstructions}
-            </p>
+      <p>
+        <strong>Application instructions:</strong>{" "}
+        {opportunity.applicationInstructions}
+      </p>
 
-            <p>
-                <strong>Deadline:</strong>{" "}
-                {opportunity.applicationDeadline}
-            </p>
+      <p>
+        <strong>Deadline:</strong> {opportunity.applicationDeadline}
+      </p>
 
-            <p>
-                <strong>Funding:</strong>{" "}
-                {opportunity.fundingInfo}
-            </p>
+      <p>
+        <strong>Funding:</strong> {opportunity.fundingInfo}
+      </p>
 
-            <p>
-                <strong>Scholarship:</strong>{" "}
-                {opportunity.hasScholarship
-                    ? "Yes"
-                    : "No"}
-            </p>
+      <p>
+        <strong>Scholarship:</strong>{" "}
+        {opportunity.hasScholarship ? "Yes" : "No"}
+      </p>
 
-            {opportunity.applicationLink && (
+      <div className="actions">
+        {opportunity.applicationLink && (
+          <a
+            href={opportunity.applicationLink}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Apply
+          </a>
+        )}
 
-                <a
-                    href={opportunity.applicationLink}
-                    target="_blank"
-                    rel="noreferrer"
-                >
-                    Apply
-                </a>
-
-            )}
-
-        </div>
-    );
+        {token ? (
+          <button className="secondary" onClick={handleToggleSaved}>
+            {saved ? "Saved ✓ (remove)" : "Save to profile"}
+          </button>
+        ) : (
+          <Link to="/login">Log in to save this</Link>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default OpportunityDetail;

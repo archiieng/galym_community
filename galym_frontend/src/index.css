@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap");
 
 :root {
   --ink: #1b1b3a;
@@ -20,19 +20,25 @@ body {
   margin: 0;
   background: var(--paper);
   color: var(--charcoal);
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   line-height: 1.5;
 }
 
-h1, h2, h3 {
-  font-family: 'Fraunces', Georgia, serif;
+h1,
+h2,
+h3 {
+  font-family: "Fraunces", Georgia, serif;
   font-weight: 600;
   color: var(--ink);
   margin: 0 0 0.4em;
 }
 
-h1 { font-size: 2rem; }
-h2 { font-size: 1.25rem; }
+h1 {
+  font-size: 2rem;
+}
+h2 {
+  font-size: 1.25rem;
+}
 
 p {
   margin: 0 0 0.75em;
@@ -54,7 +60,7 @@ a {
 nav {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 20px;
   padding: 20px 0;
   margin-bottom: 32px;
   border-bottom: 1px solid var(--line);
@@ -72,7 +78,7 @@ nav a:hover {
 }
 
 nav a:first-child {
-  font-family: 'Fraunces', serif;
+  font-family: "Fraunces", serif;
   font-weight: 600;
   font-size: 1.1rem;
   color: var(--ink);
@@ -98,7 +104,9 @@ label {
   color: var(--charcoal-soft);
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: 0.95rem;
   padding: 9px 12px;
@@ -108,7 +116,9 @@ input, select, textarea {
   color: var(--charcoal);
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
   border-color: var(--ink);
 }
@@ -223,4 +233,28 @@ form.filters div {
 .error {
   color: #b42318;
   font-size: 0.9rem;
+}
+
+/* ---- A row of links and buttons under a card or a page title ---- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.actions button {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
+/* ---- Home page intro ---- */
+.hero {
+  padding: 24px 0 40px;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  max-width: 560px;
 }

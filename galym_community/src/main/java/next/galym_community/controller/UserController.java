@@ -1,9 +1,9 @@
 package next.galym_community.controller;
 
-
 import jakarta.validation.Valid;
+import java.util.List;
 import next.galym_community.dto.UserResponse;
-import next.galym_community.entity.UserEntity;
+import next.galym_community.dto.UserUpdateRequest;
 import next.galym_community.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,14 +11,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/admin/user")
 public class UserController {
-    Logger log = LoggerFactory.getLogger(UserController.class);
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     private final UserService userService;
+
     public UserController(UserService userService) {
         this.userService = userService;
     }
@@ -26,8 +25,7 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
         log.info("Called getUser: id={}", id);
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(userService.getUserById(id));
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getUserById(id));
     }
 
     @GetMapping
@@ -38,11 +36,9 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<UserResponse> updateUser(
-            @PathVariable Long id,
-            @RequestBody @Valid UserEntity UserToUpdate
-    ) {
+            @PathVariable Long id, @RequestBody @Valid UserUpdateRequest request) {
         log.info("Called updateUser: id={}", id);
-        UserResponse updated = userService.updateUser(id, UserToUpdate);
+        UserResponse updated = userService.updateUser(id, request);
         return ResponseEntity.ok(updated);
     }
 
@@ -52,5 +48,4 @@ public class UserController {
         userService.dropppedUser(id);
         return ResponseEntity.ok().build();
     }
-
 }

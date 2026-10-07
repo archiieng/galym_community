@@ -1,74 +1,29 @@
-const BASE_URL = "http://localhost:8080";
+import { request } from "./client";
 
-function getToken() {
-    return localStorage.getItem("token");
+export function getAdminOpportunities(status = "") {
+  return request(status ? `/admin/galym?status=${status}` : "/admin/galym");
 }
 
-function getHeaders() {
-    return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${getToken()}`
-    };
+export function getAdminOpportunityById(id) {
+  return request(`/admin/galym/${id}`);
 }
 
-export async function getAdminOpportunities(status = "") {
-    let url = `${BASE_URL}/admin/galym`;
-    if (status) {
-        url += `?status=${status}`;
-    }
-    const response = await fetch(url, { headers: getHeaders() });
-    if (!response.ok) throw new Error("Failed to load admin opportunities");
-    return response.json();
+export function createOpportunity(opportunity) {
+  return request("/admin/galym", { method: "POST", body: opportunity });
 }
 
-export async function getAdminOpportunityById(id) {
-    const response = await fetch(`${BASE_URL}/admin/galym/${id}`, { headers: getHeaders() });
-    if (!response.ok) throw new Error("Failed to load opportunity");
-    return response.json();
+export function updateOpportunity(id, opportunity) {
+  return request(`/admin/galym/${id}`, { method: "PUT", body: opportunity });
 }
 
-export async function createOpportunity(opportunity) {
-    const response = await fetch(`${BASE_URL}/admin/galym`, {
-        method: "POST",
-        headers: getHeaders(),
-        body: JSON.stringify(opportunity)
-    });
-    if (!response.ok) throw new Error("Failed to create opportunity");
-    return response.json();
+export function deleteOpportunity(id) {
+  return request(`/admin/galym/${id}`, { method: "DELETE" });
 }
 
-export async function updateOpportunity(id, opportunity) {
-    const response = await fetch(`${BASE_URL}/admin/galym/${id}`, {
-        method: "PUT",
-        headers: getHeaders(),
-        body: JSON.stringify(opportunity)
-    });
-    if (!response.ok) throw new Error("Failed to update opportunity");
-    return response.json();
+export function publishOpportunity(id) {
+  return request(`/admin/galym/${id}/publish`, { method: "PATCH" });
 }
 
-export async function deleteOpportunity(id) {
-    const response = await fetch(`${BASE_URL}/admin/galym/${id}`, {
-        method: "DELETE",
-        headers: getHeaders()
-    });
-    if (!response.ok) throw new Error("Failed to delete opportunity");
-}
-
-export async function publishOpportunity(id) {
-    const response = await fetch(`${BASE_URL}/admin/galym/${id}/publish`, {
-        method: "PATCH",
-        headers: getHeaders()
-    });
-    if (!response.ok) throw new Error("Failed to publish opportunity");
-    return response.json();
-}
-
-export async function unpublishOpportunity(id) {
-    const response = await fetch(`${BASE_URL}/admin/galym/${id}/unpublish`, {
-        method: "PATCH",
-        headers: getHeaders()
-    });
-    if (!response.ok) throw new Error("Failed to unpublish opportunity");
-    return response.json();
+export function unpublishOpportunity(id) {
+  return request(`/admin/galym/${id}/unpublish`, { method: "PATCH" });
 }

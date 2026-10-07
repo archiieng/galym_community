@@ -1,69 +1,56 @@
 package next.galym_community.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDate;
+import java.util.List;
 import next.galym_community.entity.GalymEntity;
 import next.galym_community.model.enums.GalymStatus;
 import next.galym_community.model.enums.GalymType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
+@Transactional
 class GalymRepositoryTest {
 
-    @Autowired
-    private GalymRepository galymRepository;
+    @Autowired private GalymRepository galymRepository;
 
     @Test
     void filtersOpportunitiesByCountryAndScholarship() {
-        // Opportunity 1: Germany, has scholarship
-        GalymEntity galym1 = new GalymEntity();
-        galym1.setTitle("DAAD Scholarship");
-        galym1.setType(GalymType.SCHOLARSHIP);
-        galym1.setCountry("Germany");
-        galym1.setCity("Berlin");
-        galym1.setApplicationDeadline(LocalDate.of(2027, 3, 1));
-        galym1.setStatus(GalymStatus.PUBLISHED);
-        galym1.setHasScholarship(true);
-        galymRepository.save(galym1);
+        galymRepository.save(published("DAAD Scholarship", "Test-Germany", true));
+        galymRepository.save(published("Paris Internship", "Test-France", false));
 
-        // Opportunity 2: France, no scholarship
-        GalymEntity galym2 = new GalymEntity();
-        galym2.setTitle("Paris Internship");
-        galym2.setType(GalymType.INTERNSHIP);
-        galym2.setCountry("France");
-        galym2.setCity("Paris");
-        galym2.setApplicationDeadline(LocalDate.of(2027, 3, 1));
-        galym2.setStatus(GalymStatus.PUBLISHED);
-        galym2.setHasScholarship(false);
-        galymRepository.save(galym2);
-
-        // Search: only Germany, ignore everything else
-        List<GalymEntity> results = galymRepository.search(
-                GalymStatus.PUBLISHED,
-                LocalDate.now(),
-                null,
-                "Germany",
-                null,
-                null,
-                true
-        );
-
-        System.out.println("RESULT SIZE = " + results.size());
-
-        for (GalymEntity g : results) {
-            System.out.println(
-                    "Title: " + g.getTitle() +
-                            ", Country: " + g.getCountry() +
-                            ", Scholarship: " + g.isHasScholarship()
-            );
-        }
+        List<GalymEntity> results =
+                galymRepository.search(
+                        GalymStatus.PUBLISHED,
+                        LocalDate.now(),
+                        null,
+                        "Test-Germany",
+                        null,
+                        null,
+                        true);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getTitle()).isEqualTo("DAAD Scholarship");
+    }
+
+    private static GalymEntity published(String title, String country, boolean hasScholarship) {
+        GalymEntity galym = new GalymEntity();
+        galym.setTitle(title);
+        galym.setDescription("description");
+        galym.setType(GalymType.SCHOLARSHIP);
+        galym.setCountry(country);
+        galym.setCity("city");
+        galym.setOrganizationName("organization");
+        galym.setEligibility("eligibility");
+        galym.setApplicationInstructions("instructions");
+        galym.setApplicationDeadline(LocalDate.now().plusYears(1));
+        galym.setFundingInfo("funding");
+        galym.setHasScholarship(hasScholarship);
+        galym.setStatus(GalymStatus.PUBLISHED);
+        return galym;
     }
 }
