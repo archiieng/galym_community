@@ -19,13 +19,14 @@ public class GalymController {
     @GetMapping
     public ResponseEntity<List<GalymResponse>> search(
             @RequestParam(required = false) GalymType type,
+            @RequestParam(required = false) String q,
             @RequestParam(required = false) String country,
             @RequestParam(required = false) String city,
             @RequestParam(required = false) String organizationName,
             @RequestParam(required = false) Boolean hasScholarship) {
         return ResponseEntity.ok(
                 galymService.searchPublished(
-                        type, country, city, organizationName, hasScholarship));
+                        type, q, country, city, organizationName, hasScholarship));
     }
 
     @GetMapping("/{id}")

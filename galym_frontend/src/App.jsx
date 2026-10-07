@@ -1,7 +1,9 @@
-import { Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AdminOpportunities from "./pages/AdminOpportunities.jsx";
+import AdminUsers from "./pages/AdminUsers.jsx";
 import CreateOpportunity from "./pages/CreateOpportunity.jsx";
 import EditOpportunity from "./pages/EditOpportunity.jsx";
 import Home from "./pages/Home.jsx";
@@ -12,50 +14,69 @@ import OpportunityDetail from "./pages/OpportunityDetail";
 import Profile from "./pages/Profile.jsx";
 import Register from "./pages/Register.jsx";
 
+function admin(page) {
+  return <ProtectedRoute adminOnly>{page}</ProtectedRoute>;
+}
+
 function App() {
+  const location = useLocation();
+
+  // A new page starts at its top, not wherever the last one was scrolled to.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   return (
     <>
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
+
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/opportunities" element={<Opportunities />} />
-        <Route path="/opportunities/:id" element={<OpportunityDetail />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/opportunities"
-          element={
-            <ProtectedRoute adminOnly>
-              <AdminOpportunities />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/opportunities/create"
-          element={
-            <ProtectedRoute adminOnly>
-              <CreateOpportunity />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/opportunities/:id/edit"
-          element={
-            <ProtectedRoute adminOnly>
-              <EditOpportunity />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+
+      {/* key: each new path remounts <main>, which replays the page-in fade */}
+      <main id="main" key={location.pathname} className="container page">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/opportunities" element={<Opportunities />} />
+          <Route path="/opportunities/:id" element={<OpportunityDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin"
+            element={<Navigate to="/admin/opportunities" replace />}
+          />
+          <Route
+            path="/admin/opportunities"
+            element={admin(<AdminOpportunities />)}
+          />
+          <Route
+            path="/admin/opportunities/create"
+            element={admin(<CreateOpportunity />)}
+          />
+          <Route
+            path="/admin/opportunities/:id/edit"
+            element={admin(<EditOpportunity />)}
+          />
+          <Route path="/admin/users" element={admin(<AdminUsers />)} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+
+      <footer className="site-footer">
+        <div className="container">
+          Galym lists opportunities for students. Deadlines are set by the
+          organisers, so check the official page before you apply.
+        </div>
+      </footer>
     </>
   );
 }

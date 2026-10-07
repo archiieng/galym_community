@@ -1,7 +1,10 @@
 package next.galym_community.controller;
 
+import jakarta.validation.Valid;
 import java.util.List;
 import next.galym_community.dto.GalymResponse;
+import next.galym_community.dto.PasswordChangeRequest;
+import next.galym_community.dto.ProfileUpdateRequest;
 import next.galym_community.dto.UserResponse;
 import next.galym_community.service.ProfileService;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,22 @@ public class ProfileController {
     @GetMapping
     public ResponseEntity<UserResponse> getProfile(@AuthenticationPrincipal UserDetails user) {
         return ResponseEntity.ok(profileService.getProfile(user.getUsername()));
+    }
+
+    @PatchMapping
+    public ResponseEntity<UserResponse> updateProfile(
+            @AuthenticationPrincipal UserDetails user,
+            @RequestBody @Valid ProfileUpdateRequest request) {
+        return ResponseEntity.ok(profileService.updateName(user.getUsername(), request.name()));
+    }
+
+    @PutMapping("/password")
+    public ResponseEntity<Void> changePassword(
+            @AuthenticationPrincipal UserDetails user,
+            @RequestBody @Valid PasswordChangeRequest request) {
+        profileService.changePassword(
+                user.getUsername(), request.currentPassword(), request.newPassword());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/saved")

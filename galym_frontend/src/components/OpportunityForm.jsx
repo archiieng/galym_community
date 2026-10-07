@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { todayIso } from "../deadline";
 import { OPPORTUNITY_TYPES } from "../opportunityTypes";
 
 const EMPTY = {
@@ -18,7 +19,9 @@ const EMPTY = {
 
 // Shared by the create and edit pages. Only the editable fields are sent
 // back, so ids, status and timestamps from `initialData` never reach the API.
-function OpportunityForm({ initialData = {}, onSubmit, buttonText }) {
+// `error` is the server's answer to the last submit; it is shown beside the
+// button because the form is taller than the screen.
+function OpportunityForm({ initialData = {}, onSubmit, buttonText, error }) {
   const [form, setForm] = useState(() =>
     Object.fromEntries(
       Object.keys(EMPTY).map((name) => [
@@ -39,8 +42,11 @@ function OpportunityForm({ initialData = {}, onSubmit, buttonText }) {
     e.preventDefault();
 
     setSubmitting(true);
-    await onSubmit(form);
-    setSubmitting(false);
+    try {
+      await onSubmit(form);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   // Every field is the same label + control pair; only the control differs.
@@ -48,7 +54,7 @@ function OpportunityForm({ initialData = {}, onSubmit, buttonText }) {
     const Control = control;
 
     return (
-      <div>
+      <div className="field">
         <label htmlFor={name}>{label}</label>
 
         <Control
@@ -64,11 +70,11 @@ function OpportunityForm({ initialData = {}, onSubmit, buttonText }) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="form" onSubmit={handleSubmit}>
       {field("title", "Title")}
-      {field("description", "Description", "textarea", { rows: 4 })}
+      {field("description", "Description", "textarea", { rows: 5 })}
 
-      <div>
+      <div className="field">
         <label htmlFor="type">Type</label>
 
         <select id="type" name="type" value={form.type} onChange={handleChange}>
@@ -83,36 +89,60 @@ function OpportunityForm({ initialData = {}, onSubmit, buttonText }) {
       {field("country", "Country")}
       {field("city", "City")}
       {field("organizationName", "University or organization")}
-      {field("eligibility", "Eligibility", "textarea", { rows: 3 })}
-      {field(
-        "applicationInstructions",
-        "Application instructions",
-        "textarea",
-        {
-          rows: 3,
-        },
-      )}
-      {field("applicationDeadline", "Application deadline", "input", {
-        type: "date",
+      {field("eligibility", "Who can apply", "textarea", { rows: 3 })}
+      {field("applicationInstructions", "How to apply", "textarea", {
+        rows: 3,
       })}
-      {field("fundingInfo", "Funding info", "textarea", { rows: 2 })}
 
-      <label>
+      <div className="field">
+        <label htmlFor="applicationDeadline">Application deadline</label>
+
+        <input
+          id="applicationDeadline"
+          name="applicationDeadline"
+          type="date"
+          min={todayIso()}
+          aria-describedby="deadline-hint"
+          value={form.applicationDeadline}
+          onChange={handleChange}
+          required
+        />
+
+        <small id="deadline-hint">
+          Today or later. The listing stays public through this day.
+        </small>
+      </div>
+
+      {field("fundingInfo", "Funding", "textarea", { rows: 2 })}
+
+      <label className="check">
         <input
           type="checkbox"
           name="hasScholarship"
           checked={form.hasScholarship}
           onChange={handleChange}
-        />{" "}
-        Scholarship available
+        />
+        Funded (shown with a “Funded” tag in the list)
       </label>
 
-      {field("applicationLink", "Application link (optional)", "input", {
-        type: "url",
-        required: false,
-      })}
+      {field(
+        "applicationLink",
+        "Official application link (optional)",
+        "input",
+        {
+          type: "url",
+          required: false,
+          placeholder: "https://",
+        },
+      )}
 
-      <button type="submit" disabled={submitting}>
+      {error && (
+        <p className="notice notice-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <button type="submit" className="btn" disabled={submitting}>
         {buttonText}
       </button>
     </form>

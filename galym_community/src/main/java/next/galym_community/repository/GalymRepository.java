@@ -10,15 +10,26 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface GalymRepository extends JpaRepository<GalymEntity, Long> {
+    /**
+     * The text parameters are lower-cased LIKE patterns ("%berlin%") or null for "any"; {@code q}
+     * is matched against every text field a visitor would search by.
+     */
     @Query(
             """
         SELECT g FROM GalymEntity g
         WHERE g.status = :status
         AND g.applicationDeadline >= :today
         AND (:type IS NULL OR g.type = :type)
-        AND (:country IS NULL OR g.country = :country)
-        AND (:city IS NULL OR g.city = :city)
-        AND (:organizationName IS NULL OR g.organizationName = :organizationName)
+        AND (:q IS NULL
+            OR LOWER(g.title) LIKE :q ESCAPE '\\'
+            OR LOWER(g.organizationName) LIKE :q ESCAPE '\\'
+            OR LOWER(g.description) LIKE :q ESCAPE '\\'
+            OR LOWER(g.country) LIKE :q ESCAPE '\\'
+            OR LOWER(g.city) LIKE :q ESCAPE '\\')
+        AND (:country IS NULL OR LOWER(g.country) LIKE :country ESCAPE '\\')
+        AND (:city IS NULL OR LOWER(g.city) LIKE :city ESCAPE '\\')
+        AND (:organizationName IS NULL
+            OR LOWER(g.organizationName) LIKE :organizationName ESCAPE '\\')
         AND (:hasScholarship IS NULL OR g.hasScholarship = :hasScholarship)
         ORDER BY g.applicationDeadline, g.id
         """)
@@ -26,6 +37,7 @@ public interface GalymRepository extends JpaRepository<GalymEntity, Long> {
             @Param("status") GalymStatus status,
             @Param("today") LocalDate today,
             @Param("type") GalymType type,
+            @Param("q") String q,
             @Param("country") String country,
             @Param("city") String city,
             @Param("organizationName") String organizationName,

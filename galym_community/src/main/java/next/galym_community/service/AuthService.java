@@ -26,9 +26,13 @@ public class AuthService {
     public String login(LoginRequest request) {
         // Same answer for an unknown email and a wrong password, so the response
         // does not reveal which accounts exist.
+        // The spelling as typed is tried first for the rare account registered before
+        // emails were lower-cased whose address could not be converted.
+        String typed = request.email().trim();
         UserEntity user =
                 userRepository
-                        .findByEmail(request.email())
+                        .findByEmail(typed)
+                        .or(() -> userRepository.findByEmail(UserService.normalize(typed)))
                         .filter(
                                 u ->
                                         passwordEncoder.matches(

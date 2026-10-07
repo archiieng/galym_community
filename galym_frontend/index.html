@@ -4,7 +4,32 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Galym</title>
+    <meta
+      name="description"
+      content="Scholarships, internships, research and exchange programmes in one place, with the time you have left to apply."
+    />
+    <title>Galym: scholarships, internships and exchanges</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Pick the theme before the first paint so the page never flashes the wrong one.
+      (function () {
+        var saved = null;
+        try {
+          saved = localStorage.getItem("theme");
+        } catch (e) {
+          // Storage can be blocked; fall back to the system setting.
+        }
+        var system = matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+        document.documentElement.dataset.theme = saved || system;
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

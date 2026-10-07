@@ -1,6 +1,8 @@
 import { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
+import { BrandMark } from "./icons";
+import ThemeToggle from "./ThemeToggle";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -13,27 +15,40 @@ function Navbar() {
   }
 
   return (
-    <nav>
-      <Link to="/">Galym</Link>
+    <header className="site-header">
+      <nav className="container site-nav" aria-label="Main">
+        <Link to="/" className="brand">
+          <BrandMark />
+          Galym
+        </Link>
 
-      <Link to="/opportunities">Opportunities</Link>
+        <div className="nav-links">
+          <NavLink to="/opportunities">Opportunities</NavLink>
 
-      {!token ? (
-        <>
-          <Link to="/login">Login</Link>
+          {token && <NavLink to="/profile">Profile</NavLink>}
 
-          <Link to="/register">Register</Link>
-        </>
-      ) : (
-        <>
-          <Link to="/profile">Profile</Link>
+          {isAdmin && <NavLink to="/admin">Admin</NavLink>}
 
-          {isAdmin && <Link to="/admin/opportunities">Admin</Link>}
+          {!token && <NavLink to="/login">Log in</NavLink>}
+        </div>
 
-          <button onClick={handleLogout}>Logout</button>
-        </>
-      )}
-    </nav>
+        {token ? (
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={handleLogout}
+          >
+            Log out
+          </button>
+        ) : (
+          <Link to="/register" className="btn btn-small">
+            Create account
+          </Link>
+        )}
+
+        <ThemeToggle />
+      </nav>
+    </header>
   );
 }
 

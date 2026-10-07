@@ -1,130 +1,146 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 
 import { getOpportunityById } from "../api/opportunities";
+import SaveButton from "../components/SaveButton";
 import {
-  getSavedOpportunities,
-  saveOpportunity,
-  unsaveOpportunity,
-} from "../api/profile";
-import { AuthContext } from "../context/AuthContext";
+  dateParts,
+  daysLeft,
+  daysLeftLabel,
+  formatDate,
+  urgency,
+} from "../deadline";
 import { OPPORTUNITY_TYPES } from "../opportunityTypes";
+import { usePageTitle } from "../usePageTitle";
 
 function OpportunityDetail() {
   const { id } = useParams();
-  const { token } = useContext(AuthContext);
 
-  const [opportunity, setOpportunity] = useState(null);
+  // The opportunity on screen, tagged with the id it was loaded for.
+  const [result, setResult] = useState({ id: null, opportunity: null });
+  const loading = result.id !== id;
+  const { opportunity, error } = result;
 
-  const [loading, setLoading] = useState(true);
-
-  const [error, setError] = useState("");
-
-  const [saved, setSaved] = useState(false);
+  usePageTitle(opportunity?.title ?? "Opportunity");
 
   useEffect(() => {
+    let ignore = false;
+
     getOpportunityById(id)
-      .then(setOpportunity)
-      .catch((error) => setError(error.message))
-      .finally(() => setLoading(false));
+      .then((opportunity) => {
+        if (!ignore) setResult({ id, opportunity });
+      })
+      .catch((error) => {
+        if (!ignore) setResult({ id, opportunity: null, error: error.message });
+      });
+
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
-  useEffect(() => {
-    if (!token) return;
-
-    getSavedOpportunities()
-      .then((list) => setSaved(list.some((item) => String(item.id) === id)))
-      // Not knowing only means the button starts as "Save".
-      .catch(() => {});
-  }, [id, token]);
-
-  async function handleToggleSaved() {
-    try {
-      await (saved ? unsaveOpportunity(id) : saveOpportunity(id));
-
-      setSaved(!saved);
-    } catch (error) {
-      setError(error.message);
-    }
-  }
-
   if (loading) {
-    return <p>Loading...</p>;
+    return <p className="muted">Loading...</p>;
   }
 
   if (!opportunity) {
-    return <p className="error">{error || "Opportunity not found."}</p>;
+    return (
+      <div className="empty" role="alert">
+        <p>This opportunity could not be opened. It may have been removed.</p>
+        <p className="muted">{error}</p>
+        <p>
+          <Link to="/opportunities">Back to all opportunities</Link>
+        </p>
+      </div>
+    );
   }
 
+  const days = daysLeft(opportunity.applicationDeadline);
+  const { day, month, year } = dateParts(opportunity.applicationDeadline);
+
   return (
-    <div>
-      <Link to="/opportunities">Back</Link>
+    <div className="detail">
+      <article>
+        <header className="detail-head">
+          <p>
+            <Link to="/opportunities">All opportunities</Link>
+          </p>
 
-      <h1>{opportunity.title}</h1>
+          <h1>{opportunity.title}</h1>
 
-      {error && <p className="error">{error}</p>}
+          <div className="ticket-meta">
+            <span className="ticket-place">
+              {opportunity.city}, {opportunity.country}
+            </span>
+            <span>{opportunity.organizationName}</span>
+            <span className="chip">{OPPORTUNITY_TYPES[opportunity.type]}</span>
+            {opportunity.hasScholarship && (
+              <span className="chip chip-funded">Funded</span>
+            )}
+          </div>
+        </header>
 
-      <p>
-        <strong>Type:</strong> {OPPORTUNITY_TYPES[opportunity.type]}
-      </p>
+        <div className="detail-body prose">
+          <section>
+            <h2>About</h2>
+            <p>{opportunity.description}</p>
+          </section>
 
-      <p>
-        <strong>Description:</strong> {opportunity.description}
-      </p>
+          <section>
+            <h2>Who can apply</h2>
+            <p>{opportunity.eligibility}</p>
+          </section>
 
-      <p>
-        <strong>Organization:</strong> {opportunity.organizationName}
-      </p>
+          <section>
+            <h2>How to apply</h2>
+            <p>{opportunity.applicationInstructions}</p>
+          </section>
 
-      <p>
-        <strong>Country:</strong> {opportunity.country}
-      </p>
+          <section>
+            <h2>Funding</h2>
+            <p>{opportunity.fundingInfo}</p>
+          </section>
+        </div>
+      </article>
 
-      <p>
-        <strong>City:</strong> {opportunity.city}
-      </p>
+      <aside>
+        <div className="deadline-panel">
+          <div>
+            <p className="field-label muted">Apply by</p>
+            <p>
+              <span className="ticket-day">{day}</span> {month} {year}
+              <span className="visually-hidden">
+                {" "}
+                ({formatDate(opportunity.applicationDeadline)})
+              </span>
+            </p>
+          </div>
 
-      <p>
-        <strong>Eligibility:</strong> {opportunity.eligibility}
-      </p>
+          <p>
+            <span className={`chip chip-${urgency(days)}`}>
+              {daysLeftLabel(days)}
+            </span>
+          </p>
 
-      <p>
-        <strong>Application instructions:</strong>{" "}
-        {opportunity.applicationInstructions}
-      </p>
+          <hr className="deadline-rule" />
 
-      <p>
-        <strong>Deadline:</strong> {opportunity.applicationDeadline}
-      </p>
+          {opportunity.applicationLink && (
+            <a
+              className="btn"
+              href={opportunity.applicationLink}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Apply on the official site
+            </a>
+          )}
 
-      <p>
-        <strong>Funding:</strong> {opportunity.fundingInfo}
-      </p>
-
-      <p>
-        <strong>Scholarship:</strong>{" "}
-        {opportunity.hasScholarship ? "Yes" : "No"}
-      </p>
-
-      <div className="actions">
-        {opportunity.applicationLink && (
-          <a
-            href={opportunity.applicationLink}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Apply
-          </a>
-        )}
-
-        {token ? (
-          <button className="secondary" onClick={handleToggleSaved}>
-            {saved ? "Saved ✓ (remove)" : "Save to profile"}
-          </button>
-        ) : (
-          <Link to="/login">Log in to save this</Link>
-        )}
-      </div>
+          <SaveButton
+            opportunityId={opportunity.id}
+            className="btn btn-secondary"
+          />
+        </div>
+      </aside>
     </div>
   );
 }

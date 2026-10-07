@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import OpportunityForm from "../components/OpportunityForm";
 
@@ -8,6 +8,7 @@ import {
   getAdminOpportunityById,
   updateOpportunity,
 } from "../api/adminOpportunities";
+import { usePageTitle } from "../usePageTitle";
 
 function EditOpportunity() {
   const { id } = useParams();
@@ -18,22 +19,18 @@ function EditOpportunity() {
 
   const [error, setError] = useState("");
 
+  usePageTitle("Edit opportunity");
+
   useEffect(() => {
-    async function loadOpportunity() {
-      try {
-        const data = await getAdminOpportunityById(id);
-
-        setOpportunity(data);
-      } catch (error) {
-        setError(error.message);
-      }
-    }
-
-    loadOpportunity();
+    getAdminOpportunityById(id)
+      .then(setOpportunity)
+      .catch((error) => setError(error.message));
   }, [id]);
 
   async function handleUpdate(formData) {
     try {
+      setError("");
+
       await updateOpportunity(id, formData);
 
       navigate("/admin/opportunities");
@@ -43,21 +40,38 @@ function EditOpportunity() {
   }
 
   if (!opportunity) {
-    return <p>{error || "Loading..."}</p>;
+    return error ? (
+      <div className="empty" role="alert">
+        <p>This opportunity could not be loaded: {error}</p>
+        <p>
+          <Link to="/admin/opportunities">Back to the list</Link>
+        </p>
+      </div>
+    ) : (
+      <p className="muted">Loading...</p>
+    );
   }
 
   return (
-    <div>
-      <h1>Edit Opportunity</h1>
+    <>
+      <div className="page-head">
+        <div>
+          <p>
+            <Link to="/admin/opportunities">Back to the list</Link>
+          </p>
+          <h1>Edit opportunity</h1>
+        </div>
+      </div>
 
-      {error && <p className="error">{error}</p>}
-
+      {/* key: a different id gets a fresh form, not the previous one's fields */}
       <OpportunityForm
+        key={opportunity.id}
         initialData={opportunity}
         onSubmit={handleUpdate}
-        buttonText="Save Changes"
+        buttonText="Save changes"
+        error={error}
       />
-    </div>
+    </>
   );
 }
 

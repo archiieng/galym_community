@@ -1,7 +1,8 @@
 import { useState, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import { loginUser } from "../api/auth";
 import { AuthContext } from "../context/AuthContext";
+import { usePageTitle } from "../usePageTitle";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -9,60 +10,72 @@ function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-  const { login } = useContext(AuthContext); // ← new
+  const location = useLocation();
+  const { token, login } = useContext(AuthContext);
+
+  usePageTitle("Log in");
+
+  // Already signed in (or just signed in below): go back to where they came from.
+  if (token) {
+    return <Navigate to={location.state?.from ?? "/opportunities"} replace />;
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     try {
       setLoading(true);
       setError("");
-      const token = await loginUser(email, password);
-      login(token); // ← replaces the two direct localStorage/navigate lines
-      navigate("/opportunities");
+      login(await loginUser(email, password));
     } catch (error) {
       setError(error.message);
-    } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div>
-      <h1>Login</h1>
+    <div className="auth">
+      <h1>Log in</h1>
 
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Email</label>
+      <form className="form" onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="email">Email</label>
 
           <input
+            id="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
         </div>
 
-        <div>
-          <label>Password</label>
+        <div className="field">
+          <label htmlFor="password">Password</label>
 
           <input
+            id="password"
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
         </div>
 
-        {error && <p className="error">{error}</p>}
+        {error && (
+          <p className="notice notice-error" role="alert">
+            {error}
+          </p>
+        )}
 
-        <button type="submit" disabled={loading}>
-          {loading ? "Logging in..." : "Login"}
+        <button type="submit" className="btn" disabled={loading}>
+          {loading ? "Logging in..." : "Log in"}
         </button>
       </form>
 
       <p>
-        Don't have an account? <Link to="/register">Register</Link>
+        New here? <Link to="/register">Create an account</Link>
       </p>
     </div>
   );

@@ -2,6 +2,7 @@ package next.galym_community.controller;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import next.galym_community.dto.RoleUpdateRequest;
 import next.galym_community.dto.UserResponse;
 import next.galym_community.dto.UserUpdateRequest;
 import next.galym_community.service.UserService;
@@ -9,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -42,10 +45,20 @@ public class UserController {
         return ResponseEntity.ok(updated);
     }
 
+    @PatchMapping("/{id}/role")
+    public ResponseEntity<UserResponse> changeRole(
+            @PathVariable Long id,
+            @RequestBody @Valid RoleUpdateRequest request,
+            @AuthenticationPrincipal UserDetails admin) {
+        log.info("Called changeRole: id={}, role={}", id, request.role());
+        return ResponseEntity.ok(userService.changeRole(id, request.role(), admin.getUsername()));
+    }
+
     @DeleteMapping("/{id}")
-    public ResponseEntity<UserResponse> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<UserResponse> deleteUser(
+            @PathVariable Long id, @AuthenticationPrincipal UserDetails admin) {
         log.info("Called deleteUser: id={}", id);
-        userService.dropppedUser(id);
+        userService.deleteUser(id, admin.getUsername());
         return ResponseEntity.ok().build();
     }
 }

@@ -26,6 +26,7 @@ public class GalymService {
 
     public List<GalymResponse> searchPublished(
             GalymType type,
+            String q,
             String country,
             String city,
             String organizationName,
@@ -35,11 +36,26 @@ public class GalymService {
                         GalymStatus.PUBLISHED,
                         LocalDate.now(),
                         type,
-                        country,
-                        city,
-                        organizationName,
+                        contains(q),
+                        contains(country),
+                        contains(city),
+                        contains(organizationName),
                         hasScholarship);
         return results.stream().map(GalymResponse::from).toList();
+    }
+
+    /** Turns user text into a case-insensitive "contains" LIKE pattern; blank means no filter. */
+    private static String contains(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String escaped =
+                text.trim()
+                        .toLowerCase()
+                        .replace("\\", "\\\\")
+                        .replace("%", "\\%")
+                        .replace("_", "\\_");
+        return "%" + escaped + "%";
     }
 
     public GalymResponse getPublishedById(Long id) {
