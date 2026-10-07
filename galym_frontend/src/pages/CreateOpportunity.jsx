@@ -1,14 +1,17 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import OpportunityForm from "../components/OpportunityForm";
 
 import { createOpportunity } from "../api/adminOpportunities";
+import { usePageTitle } from "../usePageTitle";
 
 function CreateOpportunity() {
   const navigate = useNavigate();
 
   const [error, setError] = useState("");
+
+  usePageTitle("New opportunity");
 
   async function handleCreate(formData) {
     try {
@@ -17,22 +20,33 @@ function CreateOpportunity() {
       await createOpportunity(formData);
 
       navigate("/admin/opportunities");
+      return true;
     } catch (error) {
       setError(error.message);
+      return false;
     }
   }
 
   return (
-    <div>
-      <h1>Create Opportunity</h1>
-
-      {error && <p className="error">{error}</p>}
+    <>
+      <div className="page-head">
+        <div>
+          <p>
+            <Link to="/admin/opportunities">Back to the list</Link>
+          </p>
+          <h1>New opportunity</h1>
+          <p>
+            It is saved as a draft. Publish it from the list when it is ready.
+          </p>
+        </div>
+      </div>
 
       <OpportunityForm
         onSubmit={handleCreate}
-        buttonText="Create Opportunity"
+        buttonText="Save draft"
+        error={error}
       />
-    </div>
+    </>
   );
 }
 

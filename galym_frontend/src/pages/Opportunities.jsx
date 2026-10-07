@@ -1,66 +1,126 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { getOpportunities } from "../api/opportunities";
-import OpportunityCard from "../components/OpportunityCard";
+import OpportunityCard, {
+  OpportunitySkeletons,
+} from "../components/OpportunityCard";
 import { OPPORTUNITY_TYPES } from "../opportunityTypes";
+import { usePageTitle } from "../usePageTitle";
 
+// The filters live in the URL (?type=SCHOLARSHIP&country=germany), so a search
+// can be bookmarked, shared, and reached from links on the landing page.
 function Opportunities() {
-  const [opportunities, setOpportunities] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [type, setType] = useState("");
-  const [country, setCountry] = useState("");
-  const [city, setCity] = useState("");
-  const [organizationName, setOrganizationName] = useState("");
-  const [hasScholarship, setHasScholarship] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  async function loadOpportunities(filters = {}) {
-    try {
-      setLoading(true);
-      setError("");
+  usePageTitle("Opportunities");
 
-      const data = await getOpportunities(filters);
+  const sort = searchParams.get("sort") ?? "deadline";
 
-      setOpportunities(data);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Sorting happens here, so it is not part of what the API is asked for.
+  const apiParams = new URLSearchParams(searchParams);
+  apiParams.delete("sort");
+  const query = apiParams.toString();
+
+  // The list on screen, tagged with the query it answers.
+  const [result, setResult] = useState({ query: null, items: [], error: "" });
+  const loading = result.query !== query;
 
   useEffect(() => {
-    getOpportunities()
-      .then(setOpportunities)
-      .catch((error) => setError(error.message))
-      .finally(() => setLoading(false));
-  }, []);
+    let ignore = false;
+
+    getOpportunities(Object.fromEntries(new URLSearchParams(query)))
+      .then((items) => {
+        if (!ignore) setResult({ query, items, error: "" });
+      })
+      .catch((error) => {
+        if (!ignore) setResult({ query, items: [], error: error.message });
+      });
+
+    // A slower, older request must not overwrite a newer one.
+    return () => {
+      ignore = true;
+    };
+  }, [query]);
+
+  // A search replaces the form (see its key), which would drop keyboard focus;
+  // this puts it back on the field or button the search was started from.
+  const refocus = useRef(null);
+
+  useEffect(() => {
+    if (refocus.current) {
+      document.getElementById(refocus.current)?.focus();
+      refocus.current = null;
+    }
+  }, [query]);
+
+  // The API already returns the soonest deadline first.
+  const items =
+    sort === "newest"
+      ? result.items.toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
+      : result.items;
 
   function handleSearch(e) {
     e.preventDefault();
 
-    loadOpportunities({
-      type,
-      country,
-      city,
-      organizationName,
-      hasScholarship,
-    });
+    const next = new URLSearchParams();
+
+    for (const [name, value] of new FormData(e.target)) {
+      if (value.trim()) next.set(name, value.trim());
+    }
+    if (next.toString() !== query) {
+      refocus.current = document.activeElement?.id || "q";
+    }
+    if (sort !== "deadline") next.set("sort", sort);
+
+    setSearchParams(next);
+  }
+
+  function handleSort(e) {
+    const next = new URLSearchParams(searchParams);
+
+    if (e.target.value === "deadline") next.delete("sort");
+    else next.set("sort", e.target.value);
+
+    setSearchParams(next, { replace: true });
   }
 
   return (
-    <div>
-      <h1>Opportunities</h1>
-
-      <form className="filters" onSubmit={handleSearch}>
+    <>
+      <div className="page-head">
         <div>
-          <label htmlFor="type">Type</label>
+          <h1>Opportunities</h1>
+          <p>
+            Open scholarships, internships, research and exchange programmes.
+          </p>
+        </div>
+      </div>
 
+      {/* key: when the URL changes elsewhere, the fields pick up the new values */}
+      <form
+        key={query}
+        className="filters"
+        role="search"
+        onSubmit={handleSearch}
+      >
+        <div className="field">
+          <label htmlFor="q">Keyword</label>
+          <input
+            id="q"
+            name="q"
+            type="search"
+            placeholder="Title, organisation, country..."
+            defaultValue={searchParams.get("q") ?? ""}
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="type">Type</label>
           <select
             id="type"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
+            name="type"
+            defaultValue={searchParams.get("type") ?? ""}
           >
-            <option value="">All</option>
+            <option value="">Any type</option>
             {Object.entries(OPPORTUNITY_TYPES).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -69,73 +129,88 @@ function Opportunities() {
           </select>
         </div>
 
-        <div>
+        <div className="field">
           <label htmlFor="country">Country</label>
-
           <input
             id="country"
+            name="country"
             type="text"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
+            defaultValue={searchParams.get("country") ?? ""}
           />
         </div>
 
-        <div>
+        <div className="field">
           <label htmlFor="city">City</label>
-
           <input
             id="city"
+            name="city"
             type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
+            defaultValue={searchParams.get("city") ?? ""}
           />
         </div>
 
-        <div>
-          <label htmlFor="organizationName">Organization</label>
-
-          <input
-            id="organizationName"
-            type="text"
-            value={organizationName}
-            onChange={(e) => setOrganizationName(e.target.value)}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="hasScholarship">Scholarship</label>
-
+        <div className="field">
+          <label htmlFor="hasScholarship">Funding</label>
           <select
             id="hasScholarship"
-            value={hasScholarship}
-            onChange={(e) => setHasScholarship(e.target.value)}
+            name="hasScholarship"
+            defaultValue={searchParams.get("hasScholarship") ?? ""}
           >
-            <option value="">All</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
+            <option value="">Any</option>
+            <option value="true">Funded</option>
+            <option value="false">Not funded</option>
           </select>
         </div>
 
-        <button type="submit" disabled={loading}>
-          Search
-        </button>
+        <div className="filters-actions">
+          <button id="search-submit" type="submit" className="btn">
+            Search
+          </button>
+
+          {query && <Link to="/opportunities">Clear filters</Link>}
+
+          <div className="field">
+            <label htmlFor="sort">Sort by</label>
+            <select id="sort" value={sort} onChange={handleSort}>
+              <option value="deadline">Deadline, soonest first</option>
+              <option value="newest">Recently added</option>
+            </select>
+          </div>
+        </div>
       </form>
 
-      {error && <p className="error">{error}</p>}
-
       {loading ? (
-        <p>Loading opportunities...</p>
+        <OpportunitySkeletons count={4} />
+      ) : result.error ? (
+        <p className="notice notice-error" role="alert">
+          The list could not be loaded: {result.error}
+        </p>
+      ) : items.length === 0 ? (
+        <div className="empty">
+          <p>No open opportunities match this search.</p>
+          {query && (
+            <p>
+              <Link to="/opportunities">Clear the filters</Link> to see
+              everything.
+            </p>
+          )}
+        </div>
       ) : (
-        !error &&
-        (opportunities.length === 0 ? (
-          <p>No opportunities match these filters.</p>
-        ) : (
-          opportunities.map((opportunity) => (
-            <OpportunityCard key={opportunity.id} opportunity={opportunity} />
-          ))
-        ))
+        <>
+          <p className="muted" role="status" style={{ marginBottom: 12 }}>
+            {items.length === 1
+              ? "1 opportunity"
+              : `${items.length} opportunities`}
+          </p>
+
+          <div className="stack">
+            {items.map((opportunity) => (
+              <OpportunityCard key={opportunity.id} opportunity={opportunity} />
+            ))}
+          </div>
+        </>
       )}
-    </div>
+    </>
   );
 }
 

@@ -1,5 +1,6 @@
 package next.galym_community.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import jakarta.validation.ValidationException;
@@ -27,6 +28,27 @@ public class AuthServiceTest {
                 new RegisterRequest("Second User", "duplicate@test.com", "differentPassword");
 
         assertThrows(ValidationException.class, () -> userService.register(duplicateRequest));
+    }
+
+    @Test
+    void emailCaseAndSurroundingSpacesDoNotMatter() {
+        userService.register(new RegisterRequest("Mixed", "Mixed.Case@Test.com", "password123"));
+
+        assertDoesNotThrow(
+                () -> authService.login(new LoginRequest(" mixed.case@test.COM ", "password123")));
+        assertThrows(
+                ValidationException.class,
+                () ->
+                        userService.register(
+                                new RegisterRequest("Twin", "MIXED.CASE@test.com", "password123")));
+    }
+
+    @Test
+    void passwordLongerThanBcryptCanHashIsRejectedNotCrashed() {
+        // 40 Cyrillic letters: within the 72-character limit, but 80 bytes.
+        var request = new RegisterRequest("Long", "longpw@test.com", "п".repeat(40));
+
+        assertThrows(ValidationException.class, () -> userService.register(request));
     }
 
     @Test

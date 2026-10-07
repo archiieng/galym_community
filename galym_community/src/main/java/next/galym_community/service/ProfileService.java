@@ -1,6 +1,7 @@
 package next.galym_community.service;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ValidationException;
 import java.util.List;
 import next.galym_community.dto.GalymResponse;
 import next.galym_community.dto.UserResponse;
@@ -9,6 +10,7 @@ import next.galym_community.entity.UserEntity;
 import next.galym_community.model.enums.GalymStatus;
 import next.galym_community.repository.GalymRepository;
 import next.galym_community.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,14 +20,34 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileService {
     private final UserRepository userRepository;
     private final GalymRepository galymRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public ProfileService(UserRepository userRepository, GalymRepository galymRepository) {
+    public ProfileService(
+            UserRepository userRepository,
+            GalymRepository galymRepository,
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.galymRepository = galymRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponse getProfile(String email) {
         return UserResponse.from(find(email));
+    }
+
+    public UserResponse updateName(String email, String name) {
+        UserEntity user = find(email);
+        user.setName(name.trim());
+        return UserResponse.from(user);
+    }
+
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        UserEntity user = find(email);
+        // A 400, not a 401: the session is fine, only this form's input is wrong.
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            throw new ValidationException("Current password is incorrect");
+        }
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
     }
 
     public List<GalymResponse> getSaved(String email) {

@@ -7,37 +7,54 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import next.galym_community.dto.login_and_register.LoginRequest;
 import next.galym_community.dto.login_and_register.RegisterRequest;
 import next.galym_community.entity.GalymEntity;
 import next.galym_community.model.enums.GalymStatus;
 import next.galym_community.model.enums.GalymType;
 import next.galym_community.repository.GalymRepository;
+import next.galym_community.repository.UserRepository;
 import next.galym_community.service.AuthService;
 import next.galym_community.service.UserService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Deliberately not @Transactional: a test-wide transaction would keep one session open and hide
+ * lazy-loading failures that the real application (open-in-view is off) would hit.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
-@Transactional
 class ProfileControllerTest {
+    private static final String EMAIL = "saver@test.com";
 
     @Autowired private MockMvc mockMvc;
     @Autowired private UserService userService;
     @Autowired private AuthService authService;
+    @Autowired private UserRepository userRepository;
     @Autowired private GalymRepository galymRepository;
+
+    private Long galymId;
+
+    @AfterEach
+    void removeWhatTheTestCreated() {
+        // saved_galym rows go with either side (ON DELETE CASCADE).
+        userRepository.findByEmail(EMAIL).ifPresent(userRepository::delete);
+        if (galymId != null) {
+            galymRepository.deleteById(galymId);
+        }
+    }
 
     @Test
     void userSavesAndRemovesAnOpportunity() throws Exception {
-        userService.register(new RegisterRequest("Saver", "saver@test.com", "password123"));
-        String bearer =
-                "Bearer " + authService.login(new LoginRequest("saver@test.com", "password123"));
-        Long galymId = galymRepository.save(publishedGalym()).getId();
+        userService.register(new RegisterRequest("Saver", EMAIL, "password123"));
+        String bearer = "Bearer " + authService.login(new LoginRequest(EMAIL, "password123"));
+        galymId = galymRepository.save(publishedGalym()).getId();
 
         mockMvc.perform(get("/users/me").header("Authorization", bearer))
                 .andExpect(status().isOk())
@@ -68,6 +85,8 @@ class ProfileControllerTest {
         galym.setApplicationDeadline(LocalDate.now().plusYears(1));
         galym.setFundingInfo("funding");
         galym.setStatus(GalymStatus.PUBLISHED);
+        galym.setCreatedAt(LocalDateTime.now());
+        galym.setUpdatedAt(LocalDateTime.now());
         return galym;
     }
 }

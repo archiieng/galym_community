@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import next.galym_community.dto.GalymRequest;
 import next.galym_community.dto.GalymResponse;
 import next.galym_community.entity.GalymEntity;
@@ -26,6 +27,7 @@ public class GalymService {
 
     public List<GalymResponse> searchPublished(
             GalymType type,
+            String q,
             String country,
             String city,
             String organizationName,
@@ -35,11 +37,26 @@ public class GalymService {
                         GalymStatus.PUBLISHED,
                         LocalDate.now(),
                         type,
-                        country,
-                        city,
-                        organizationName,
+                        contains(q),
+                        contains(country),
+                        contains(city),
+                        contains(organizationName),
                         hasScholarship);
         return results.stream().map(GalymResponse::from).toList();
+    }
+
+    /** Turns user text into a case-insensitive "contains" LIKE pattern; blank means no filter. */
+    private static String contains(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String escaped =
+                text.trim()
+                        .toLowerCase(Locale.ROOT)
+                        .replace("\\", "\\\\")
+                        .replace("%", "\\%")
+                        .replace("_", "\\_");
+        return "%" + escaped + "%";
     }
 
     public GalymResponse getPublishedById(Long id) {
