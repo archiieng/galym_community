@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 import { loginUser, registerUser } from "../api/auth";
 import { AuthContext } from "../context/AuthContext";
@@ -14,27 +14,36 @@ function Register() {
   const [loading, setLoading] = useState(false);
 
   const { token, login } = useContext(AuthContext);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   usePageTitle("Create an account");
 
   if (token) {
-    return <Navigate to="/opportunities" replace />;
+    return <Navigate to={location.state?.from ?? "/opportunities"} replace />;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
 
+    setLoading(true);
+    setError("");
+
     try {
-      setLoading(true);
-      setError("");
-
       await registerUser(name, email, password);
-
-      // No second form to fill in: the new account is signed in straight away.
-      login(await loginUser(email, password));
     } catch (error) {
       setError(error.message);
       setLoading(false);
+      return;
+    }
+
+    try {
+      // No second form to fill in: the new account is signed in straight away.
+      login(await loginUser(email, password));
+    } catch {
+      // The account exists; only the automatic sign-in failed. Retrying this
+      // form would answer "email already exists", so hand over to the login page.
+      navigate("/login", { state: location.state });
     }
   }
 
@@ -98,7 +107,10 @@ function Register() {
       </form>
 
       <p>
-        Already have an account? <Link to="/login">Log in</Link>
+        Already have an account?{" "}
+        <Link to="/login" state={location.state}>
+          Log in
+        </Link>
       </p>
     </div>
   );

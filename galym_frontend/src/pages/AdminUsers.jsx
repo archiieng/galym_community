@@ -25,7 +25,7 @@ function AdminUsers() {
 
       const updated = await changeUserRole(user.id, role);
 
-      setUsers(users.map((u) => (u.id === updated.id ? updated : u)));
+      setUsers((list) => list.map((u) => (u.id === updated.id ? updated : u)));
     } catch (error) {
       setError(error.message);
     }
@@ -45,7 +45,7 @@ function AdminUsers() {
 
       await deleteUser(user.id);
 
-      setUsers(users.filter((u) => u.id !== user.id));
+      setUsers((list) => list.filter((u) => u.id !== user.id));
     } catch (error) {
       setError(error.message);
     }

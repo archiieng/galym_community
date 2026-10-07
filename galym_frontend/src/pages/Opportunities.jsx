@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getOpportunities } from "../api/opportunities";
 import OpportunityCard, {
@@ -42,6 +42,17 @@ function Opportunities() {
     };
   }, [query]);
 
+  // A search replaces the form (see its key), which would drop keyboard focus;
+  // this puts it back on the field or button the search was started from.
+  const refocus = useRef(null);
+
+  useEffect(() => {
+    if (refocus.current) {
+      document.getElementById(refocus.current)?.focus();
+      refocus.current = null;
+    }
+  }, [query]);
+
   // The API already returns the soonest deadline first.
   const items =
     sort === "newest"
@@ -55,6 +66,9 @@ function Opportunities() {
 
     for (const [name, value] of new FormData(e.target)) {
       if (value.trim()) next.set(name, value.trim());
+    }
+    if (next.toString() !== query) {
+      refocus.current = document.activeElement?.id || "q";
     }
     if (sort !== "deadline") next.set("sort", sort);
 
@@ -149,7 +163,7 @@ function Opportunities() {
         </div>
 
         <div className="filters-actions">
-          <button type="submit" className="btn">
+          <button id="search-submit" type="submit" className="btn">
             Search
           </button>
 

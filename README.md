@@ -34,10 +34,10 @@ You need [Docker Desktop](https://www.docker.com/products/docker-desktop/) and, 
    cp .env.example .env        # Windows cmd: copy .env.example .env
    ```
 
-2. Start the database, the API and the website.
+2. Start the database, the API and the website. `--wait` returns once the API is ready, which the next step needs.
 
    ```bash
-   docker compose up --build -d
+   docker compose up --build -d --wait
    ```
 
 3. Load sample data. Optional, and safe to repeat.
@@ -66,7 +66,7 @@ The database password is only read when the database is first created. If you ch
 | Admin | `admin@galym.local` | `admin12345` |
 | User  | `user@galym.local`  | `user12345`  |
 
-It only adds what is missing, so running it again changes nothing. Deadlines are counted from the day you run it. The programme names are real, but the dates and details are illustrative.
+It only adds what is missing, so it is safe to run again. Deadlines are counted from the day a row is added, and a later run moves any sample deadline that has passed forward, so the list does not empty out. The programme names are real, but the dates and details are illustrative.
 
 These passwords are public. Never run the seed against a database that real people use.
 
@@ -97,14 +97,16 @@ In development React runs every effect twice on purpose (`StrictMode`), so each 
 
 ### Backend without Docker
 
-With JDK 21 installed and a PostgreSQL that matches `.env`:
+You need JDK 21. Keep the database in Docker and stop the Docker copy of the API, which uses the same port:
 
 ```bash
+docker compose up -d db
+docker compose stop backend
 cd galym_community
-./mvnw spring-boot:run
+./mvnw spring-boot:run        # Windows cmd: mvnw spring-boot:run
 ```
 
-The backend reads the same root `.env` file.
+The backend reads the same root `.env` file. Its `SPRING_DATASOURCE_URL` points at the Docker database, which is published on port 5433 of your machine.
 
 ### Lint, format and tests
 
@@ -119,12 +121,14 @@ npm run format    # rewrite files with Prettier (frontend) and Spotless (backend
 
 The backend half runs Maven inside Docker, so it needs Docker running but no local JDK.
 
-Backend tests need a PostgreSQL to talk to. CI provides one; locally, with JDK 21:
+Backend tests need a PostgreSQL to talk to. CI provides one; locally, with JDK 21 and the Docker database running (`docker compose up -d db`):
 
 ```bash
 cd galym_community
-./mvnw verify      # uses the database settings from .env
+./mvnw verify      # Windows cmd: mvnw verify
 ```
+
+The tests run against the database from `.env` and remove what they create.
 
 Every push runs the same checks in GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)): frontend lint, format check and build; backend format check, lint and tests.
 
@@ -137,6 +141,8 @@ Every setting is an environment variable, documented in [.env.example](.env.exam
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Database name and login            |
 | `JWT_SECRET`           | Signs login tokens. Changing it logs everyone out.          |
 | `CORS_ALLOWED_ORIGINS` | Website addresses allowed to call the API                   |
+| `APP_TIMEZONE`         | Time zone that decides when a deadline day ends             |
+| `SPRING_DATASOURCE_URL` | Database address for a backend running outside Docker      |
 | `VITE_API_URL`         | Where the browser finds the API                             |
 
 The website is published on port 5173 and the API on 8080. If you change those in `docker-compose.yml`, change `CORS_ALLOWED_ORIGINS` and `VITE_API_URL` to match.

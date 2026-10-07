@@ -13,7 +13,7 @@
   --ink: #0f2437;
   --muted: #516274;
   --line: #c3d1dc;
-  --field-border: #8195a6;
+  --field-border: #788c9d;
 
   --sky: #0a6c8f;
   --sky-strong: #085a77;
@@ -95,6 +95,8 @@ body {
 #root {
   display: flex;
   flex-direction: column;
+  /* decoration and arriving tickets may poke past the edge; never scroll sideways */
+  overflow-x: clip;
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -255,6 +257,12 @@ a:hover {
   color: var(--ink);
 }
 
+/* <main> takes focus after each navigation; that needs no ring. */
+main:focus,
+main:focus-visible {
+  outline: none;
+}
+
 main {
   flex: 1;
   padding-block: 36px 72px;
@@ -369,7 +377,7 @@ main {
   width: 38px;
   height: 38px;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 1px solid var(--field-border);
   border-radius: 50%;
   background: transparent;
   color: var(--ink);
@@ -453,6 +461,23 @@ input[readonly] {
   border-color: var(--line);
   background: var(--surface-dim);
   color: var(--muted);
+}
+
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* A button that reads as a link, for small actions inside a sentence. */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
 textarea {
@@ -687,15 +712,19 @@ input[type="checkbox"] {
 }
 
 .ticket-aside {
-  position: relative; /* above the stretched title link */
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 14px 16px 14px 0;
 }
 
+/* Only the button sits above the stretched title link, not the space around it. */
+.save-btn {
+  position: relative;
+}
+
 .save-btn[aria-pressed="true"] {
-  border-color: var(--sun);
+  border-color: var(--sun-ink);
   background: var(--sun-soft);
   color: var(--sun-ink);
 }
@@ -792,7 +821,7 @@ input[type="checkbox"] {
   position: absolute;
   z-index: -1;
   top: -46px;
-  right: -28px;
+  right: calc(-1 * var(--gutter));
   width: 230px;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -801,6 +830,11 @@ input[type="checkbox"] {
 
 :root[data-theme="dark"] .hero-board::before {
   opacity: 0.85;
+}
+
+/* Keeps the empty-state text readable where it crosses the sun. */
+.hero-board .empty {
+  background: var(--surface);
 }
 
 .hero-board h2 {
@@ -1091,6 +1125,11 @@ td select {
 }
 
 /* Dates and the action buttons stay on one line; the title column gives way. */
+/* On narrow screens the table scrolls sideways rather than crush the title. */
+td:first-child {
+  min-width: 14rem;
+}
+
 td.nowrap,
 td:last-child {
   width: 1%;
@@ -1130,6 +1169,7 @@ td:last-child {
   *::after {
     animation-duration: 0.01ms !important;
     animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 
@@ -1181,6 +1221,11 @@ td:last-child {
 }
 
 @media (max-width: 520px) {
+  /* tighter, so the brand, the account button and the theme toggle share one row */
+  .site-nav {
+    column-gap: 10px;
+  }
+
   .nav-links {
     order: 1;
     width: 100%;
@@ -1191,7 +1236,13 @@ td:last-child {
   }
 
   .ticket {
-    grid-template-columns: 84px minmax(0, 1fr);
+    grid-template-columns: 96px minmax(0, 1fr);
+  }
+
+  /* "104 days left" has to fit inside the narrower stub */
+  .ticket-stub .chip {
+    padding-inline: 7px;
+    font-size: 0.72rem;
   }
 
   .ticket-day {

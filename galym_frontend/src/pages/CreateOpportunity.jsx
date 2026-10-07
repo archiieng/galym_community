@@ -20,8 +20,10 @@ function CreateOpportunity() {
       await createOpportunity(formData);
 
       navigate("/admin/opportunities");
+      return true;
     } catch (error) {
       setError(error.message);
+      return false;
     }
   }
 

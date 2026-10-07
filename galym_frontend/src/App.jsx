@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Navigate, Routes, Route, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -21,9 +21,19 @@ function admin(page) {
 function App() {
   const location = useLocation();
 
-  // A new page starts at its top, not wherever the last one was scrolled to.
+  const firstPage = useRef(true);
+
+  // A new page starts at its top, and keyboard and screen-reader users start
+  // at its content instead of being left on a link that no longer exists.
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    if (firstPage.current) {
+      firstPage.current = false;
+      return;
+    }
+
+    document.getElementById("main")?.focus({ preventScroll: true });
   }, [location.pathname]);
 
   return (
@@ -35,7 +45,12 @@ function App() {
       <Navbar />
 
       {/* key: each new path remounts <main>, which replays the page-in fade */}
-      <main id="main" key={location.pathname} className="container page">
+      <main
+        id="main"
+        key={location.pathname}
+        tabIndex={-1}
+        className="container page"
+      >
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/opportunities" element={<Opportunities />} />

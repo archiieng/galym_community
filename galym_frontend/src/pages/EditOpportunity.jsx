@@ -34,8 +34,10 @@ function EditOpportunity() {
       await updateOpportunity(id, formData);
 
       navigate("/admin/opportunities");
+      return true;
     } catch (error) {
       setError(error.message);
+      return false;
     }
   }
 

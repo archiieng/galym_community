@@ -17,9 +17,11 @@ ALTER TABLE galym
     ALTER COLUMN updated_at SET NOT NULL;
 
 -- Emails are now stored and compared in lower case, so "Name@x.com" and "name@x.com"
--- are one account. An address is left as it is if lower-casing it would collide with
--- another account; that person keeps logging in with the exact spelling they registered.
+-- are one account. If two existing accounts differ only in letter case, both are left
+-- exactly as they are; those people keep logging in with the spelling they registered.
 UPDATE users u
 SET email = lower(u.email)
 WHERE u.email <> lower(u.email)
-  AND NOT EXISTS (SELECT 1 FROM users o WHERE o.email = lower(u.email));
+  AND NOT EXISTS (
+      SELECT 1 FROM users o WHERE o.id <> u.id AND lower(o.email) = lower(u.email)
+  );

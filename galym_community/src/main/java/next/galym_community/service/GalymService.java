@@ -4,6 +4,7 @@ import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import next.galym_community.dto.GalymRequest;
 import next.galym_community.dto.GalymResponse;
 import next.galym_community.entity.GalymEntity;
@@ -51,7 +52,7 @@ public class GalymService {
         }
         String escaped =
                 text.trim()
-                        .toLowerCase()
+                        .toLowerCase(Locale.ROOT)
                         .replace("\\", "\\\\")
                         .replace("%", "\\%")
                         .replace("_", "\\_");

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SESSION_EXPIRED } from "../api/client";
 import {
   getMe,
@@ -20,6 +20,8 @@ export function AuthProvider({ children }) {
   // ended session (that one signs the user out, see below).
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  // Opportunities with a save or un-save request still on its way.
+  const pendingToggles = useRef(new Set());
 
   useEffect(() => {
     if (!token) return;
@@ -86,6 +88,11 @@ export function AuthProvider({ children }) {
 
   // Flips the bookmark right away and puts it back if the server refuses.
   async function toggleSaved(id) {
+    // A second click before the first request answers is ignored, so two
+    // requests for one opportunity can never cross.
+    if (pendingToggles.current.has(id)) return;
+    pendingToggles.current.add(id);
+
     const wasSaved = savedIds.has(id);
     const flip = (on) =>
       setSavedIds((ids) => {
@@ -100,7 +107,10 @@ export function AuthProvider({ children }) {
     try {
       await (wasSaved ? unsaveOpportunity(id) : saveOpportunity(id));
     } catch {
-      flip(wasSaved);
+      // If the session ended, everything was just cleared; do not re-add it.
+      if (localStorage.getItem("token")) flip(wasSaved);
+    } finally {
+      pendingToggles.current.delete(id);
     }
   }
 
@@ -110,6 +120,7 @@ export function AuthProvider({ children }) {
     setUser,
     isAdmin: user?.role === "ADMIN",
     savedIds,
+    setSavedIds,
     toggleSaved,
     loadError,
     retryLoad: () => setAttempt((n) => n + 1),

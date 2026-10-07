@@ -17,7 +17,9 @@ function SaveButton({
 
   function handleClick() {
     if (!token) {
-      navigate("/login", { state: { from: location.pathname } });
+      navigate("/login", {
+        state: { from: location.pathname + location.search },
+      });
       return;
     }
 

@@ -1,9 +1,11 @@
 -- Sample data for local development. Run it with `npm run seed` from the repo root.
 --
 -- Safe to run more than once: accounts are matched by email and opportunities by title,
--- so existing rows are left alone. Deadlines are relative to today, so the list never
--- goes stale. The programme names are real, but the deadlines and details here are
--- illustrative. Do not run this against a production database: the passwords are public.
+-- so existing rows are left alone. Deadlines are counted from the day a row is added, and
+-- running the seed again moves any sample deadline that has passed forward, so the public
+-- list does not empty out over time. The programme names are real, but the deadlines and
+-- details here are illustrative. Do not run this against a production database: the
+-- passwords are public.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
@@ -14,17 +16,9 @@ VALUES
     ('Dias Student', 'user@galym.local', crypt('user12345', gen_salt('bf', 10)), 'USER')
 ON CONFLICT (email) DO NOTHING;
 
-INSERT INTO galym (
-    title, type, organization_name, country, city, description, eligibility,
-    application_instructions, funding_info, has_scholarship, application_link,
-    application_deadline, status, created_by_user_id, created_at, updated_at
-)
-SELECT
-    v.title, v.type, v.organization_name, v.country, v.city, v.description, v.eligibility,
-    v.application_instructions, v.funding_info, v.has_scholarship, v.application_link,
-    CURRENT_DATE + v.days_left, v.status,
-    (SELECT id FROM users WHERE email = 'admin@galym.local'),
-    now() - make_interval(days => v.added_days_ago), now() - make_interval(days => v.added_days_ago)
+-- The sample opportunities, kept in a temporary table because two statements read them.
+CREATE TEMP TABLE seed_galym AS
+SELECT *
 FROM (
     VALUES
     (
@@ -127,8 +121,28 @@ FROM (
     title, type, organization_name, country, city, description, eligibility,
     application_instructions, funding_info, has_scholarship, application_link,
     days_left, status, added_days_ago
+);
+
+INSERT INTO galym (
+    title, type, organization_name, country, city, description, eligibility,
+    application_instructions, funding_info, has_scholarship, application_link,
+    application_deadline, status, created_by_user_id, created_at, updated_at
 )
+SELECT
+    v.title, v.type, v.organization_name, v.country, v.city, v.description, v.eligibility,
+    v.application_instructions, v.funding_info, v.has_scholarship, v.application_link,
+    CURRENT_DATE + v.days_left, v.status,
+    (SELECT id FROM users WHERE email = 'admin@galym.local'),
+    now() - make_interval(days => v.added_days_ago), now() - make_interval(days => v.added_days_ago)
+FROM seed_galym v
 WHERE NOT EXISTS (SELECT 1 FROM galym g WHERE g.title = v.title);
+
+-- Sample rows whose deadline has passed get a fresh one.
+UPDATE galym g
+SET application_deadline = CURRENT_DATE + v.days_left
+FROM seed_galym v
+WHERE g.title = v.title AND g.application_deadline < CURRENT_DATE;
+
 
 -- Two saved opportunities, so the demo user's profile is not empty.
 INSERT INTO saved_galym (user_id, galym_id)

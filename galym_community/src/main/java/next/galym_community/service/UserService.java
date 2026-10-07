@@ -10,6 +10,7 @@ import next.galym_community.dto.login_and_register.RegisterRequest;
 import next.galym_community.entity.UserEntity;
 import next.galym_community.model.enums.RoleGalym;
 import next.galym_community.repository.UserRepository;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -36,13 +37,13 @@ public class UserService {
     }
 
     public List<UserResponse> findAllUser() {
-        List<UserEntity> allUsers = repository.findAll();
+        List<UserEntity> allUsers = repository.findAll(Sort.by("id"));
         return allUsers.stream()
                 .map(it -> new UserResponse(it.getId(), it.getName(), it.getEmail(), it.getRole()))
                 .toList();
     }
 
-    public UserResponse updateUser(Long id, UserUpdateRequest request) {
+    public UserResponse updateUser(Long id, UserUpdateRequest request, String actingEmail) {
         var user =
                 repository
                         .findById(id)
@@ -50,6 +51,10 @@ public class UserService {
                                 () ->
                                         new EntityNotFoundException(
                                                 "User by id " + id + " does not exist"));
+        // Same rule as changeRole: an admin cannot take their own admin rights away.
+        if (user.getEmail().equals(actingEmail) && request.role() != user.getRole()) {
+            throw new ValidationException("You cannot change your own role");
+        }
         user.setName(request.name());
         user.setEmail(normalize(request.email()));
         user.setPasswordHash(passwordEncoder.encode(request.password()));

@@ -10,7 +10,13 @@ function ProtectedRoute({ children, adminOnly = false }) {
   const location = useLocation();
 
   if (!token) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
   }
 
   if (!user) {

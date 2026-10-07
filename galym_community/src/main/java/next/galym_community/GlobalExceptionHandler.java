@@ -2,6 +2,7 @@ package next.galym_community;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -51,9 +52,21 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponseDTO> handleConflict(DataIntegrityViolationException ex) {
-        return error(
-                HttpStatus.CONFLICT, "This conflicts with existing data, e.g. an email in use");
+    public ResponseEntity<ErrorResponseDTO> handleDataIntegrity(
+            DataIntegrityViolationException ex) {
+        String sqlState =
+                ex.getMostSpecificCause() instanceof SQLException sql ? sql.getSQLState() : "";
+        // 23505: unique violation, e.g. an email that is already registered.
+        if ("23505".equals(sqlState)) {
+            return error(HttpStatus.CONFLICT, "This already exists");
+        }
+        // Class 22: data the database cannot store, such as a NUL byte in a search term.
+        if (sqlState != null && sqlState.startsWith("22")) {
+            return error(HttpStatus.BAD_REQUEST, "The request could not be understood");
+        }
+        // Anything else (a missing required column, a broken foreign key) is a bug on our
+        // side and must show up as a logged 500, not be blamed on the caller.
+        throw ex;
     }
 
     private static ResponseEntity<ErrorResponseDTO> error(HttpStatus status, String message) {

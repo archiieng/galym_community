@@ -13,7 +13,7 @@ import { usePageTitle } from "../usePageTitle";
 
 function Profile() {
   // ProtectedRoute only renders this page once `user` is loaded.
-  const { user, setUser, savedIds } = useContext(AuthContext);
+  const { user, setUser, setSavedIds } = useContext(AuthContext);
 
   const [saved, setSaved] = useState(null);
   const [savedError, setSavedError] = useState("");
@@ -22,14 +22,16 @@ function Profile() {
 
   useEffect(() => {
     getSavedOpportunities()
-      .then(setSaved)
+      .then((list) => {
+        setSaved(list);
+        // The list may have changed in another tab or on another device.
+        setSavedIds(new Set(list.map((opportunity) => opportunity.id)));
+      })
       .catch((error) => setSavedError(error.message));
-  }, []);
+  }, [setSavedIds]);
 
-  // Un-saving a ticket here removes it from the list at once.
-  const stillSaved = saved?.filter((opportunity) =>
-    savedIds.has(opportunity.id),
-  );
+  // A ticket un-saved here stays where it is, with its button back to "Save",
+  // so a slip can be undone. It is gone the next time the page is opened.
 
   return (
     <>
@@ -57,9 +59,9 @@ function Profile() {
           <p className="notice notice-error" role="alert">
             Your saved list could not be loaded: {savedError}
           </p>
-        ) : !stillSaved ? (
+        ) : !saved ? (
           <OpportunitySkeletons count={2} />
-        ) : stillSaved.length === 0 ? (
+        ) : saved.length === 0 ? (
           <div className="empty">
             <p>You have not saved anything yet.</p>
             <p>
@@ -69,7 +71,7 @@ function Profile() {
           </div>
         ) : (
           <div className="stack">
-            {stillSaved.map((opportunity) => (
+            {saved.map((opportunity) => (
               <OpportunityCard key={opportunity.id} opportunity={opportunity} />
             ))}
           </div>
