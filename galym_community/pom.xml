@@ -58,10 +58,6 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.12.6</version>
@@ -70,6 +66,15 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
@@ -94,6 +99,66 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<!-- Formatter (the Java counterpart of Prettier): mvnw spotless:apply / spotless:check -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>3.10.3</version>
+				<configuration>
+					<lineEndings>UNIX</lineEndings>
+					<java>
+						<googleJavaFormat>
+							<style>AOSP</style>
+						</googleJavaFormat>
+						<removeUnusedImports/>
+					</java>
+				</configuration>
+			</plugin>
+			<!-- Linter (the Java counterpart of ESLint): mvnw checkstyle:check -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>3.6.0</version>
+				<dependencies>
+					<dependency>
+						<groupId>com.puppycrawl.tools</groupId>
+						<artifactId>checkstyle</artifactId>
+						<version>14.3.0</version>
+					</dependency>
+				</dependencies>
+				<configuration>
+					<includeTestSourceDirectory>true</includeTestSourceDirectory>
+					<consoleOutput>true</consoleOutput>
+					<checkstyleRules>
+						<module name="Checker">
+							<module name="TreeWalker">
+								<module name="UnusedImports"/>
+								<module name="UnusedLocalVariable"/>
+								<module name="EqualsHashCode"/>
+								<module name="StringLiteralEquality"/>
+								<module name="EmptyStatement"/>
+								<module name="EmptyCatchBlock"/>
+								<module name="FallThrough"/>
+								<module name="MissingSwitchDefault"/>
+								<module name="MissingOverride"/>
+								<module name="SimplifyBooleanExpression"/>
+								<module name="SimplifyBooleanReturn"/>
+								<module name="InnerAssignment"/>
+								<module name="ModifierOrder"/>
+								<module name="VisibilityModifier"/>
+								<module name="TypeName"/>
+								<module name="MethodName"/>
+								<module name="MemberName"/>
+								<module name="ParameterName"/>
+								<module name="LocalVariableName"/>
+								<module name="ConstantName">
+									<property name="format" value="^(log|[A-Z][A-Z0-9]*(_[A-Z0-9]+)*)$"/>
+								</module>
+							</module>
+						</module>
+					</checkstyleRules>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

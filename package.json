@@ -1,5 +1,12 @@
 {
-  "dependencies": {
-    "react-router-dom": "^7.18.4"
+  "name": "galym_community",
+  "private": true,
+  "scripts": {
+    "lint": "npm run lint:frontend && npm run lint:backend",
+    "lint:frontend": "npm --prefix galym_frontend run lint && npm --prefix galym_frontend run format:check",
+    "lint:backend": "docker run --rm -v ./galym_community:/app -v galym_m2:/root/.m2 -w /app maven:3.9-eclipse-temurin-21 mvn -q -B spotless:check checkstyle:check",
+    "format": "npm run format:frontend && npm run format:backend",
+    "format:frontend": "npm --prefix galym_frontend run format",
+    "format:backend": "docker run --rm -v ./galym_community:/app -v galym_m2:/root/.m2 -w /app maven:3.9-eclipse-temurin-21 mvn -q -B spotless:apply"
   }
 }

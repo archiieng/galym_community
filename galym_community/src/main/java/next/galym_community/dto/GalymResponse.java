@@ -1,11 +1,10 @@
 package next.galym_community.dto;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import next.galym_community.entity.GalymEntity;
 import next.galym_community.model.enums.GalymStatus;
 import next.galym_community.model.enums.GalymType;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 public record GalymResponse(
         Long id,
@@ -23,9 +22,8 @@ public record GalymResponse(
         String applicationLink,
         GalymStatus status,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
-) {
-    public static  GalymResponse from(GalymEntity entity) {
+        LocalDateTime updatedAt) {
+    public static GalymResponse from(GalymEntity entity) {
         return new GalymResponse(
                 entity.getId(),
                 entity.getTitle(),
@@ -42,7 +40,6 @@ public record GalymResponse(
                 entity.getApplicationLink(),
                 entity.getStatus(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
-        );
+                entity.getUpdatedAt());
     }
 }
