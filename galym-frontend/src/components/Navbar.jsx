@@ -1,16 +1,14 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 function Navbar() {
 
-    const location = useLocation();
     const navigate = useNavigate();
-
-    const token = localStorage.getItem("token");
+    const { token, role, logout } = useContext(AuthContext);
 
     function handleLogout() {
-
-        localStorage.removeItem("token");
-
+        logout();
         navigate("/login");
     }
 
@@ -43,11 +41,15 @@ function Navbar() {
                 </>
             ) : (
                 <>
-                    <Link to="/admin/opportunities">
-                        Admin
-                    </Link>
+                    {role === "ADMIN" && (
+                        <>
+                            <Link to="/admin/opportunities">
+                                Admin
+                            </Link>
 
-                    {" | "}
+                            {" | "}
+                        </>
+                    )}
 
                     <button onClick={handleLogout}>
                         Logout
