@@ -5,7 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 // The backend enforces access; this only keeps people off pages that would
 // show them nothing but errors.
 function ProtectedRoute({ children, adminOnly = false }) {
-  const { token, user, isAdmin, loadError, retryLoad } =
+  const { token, user, isAdmin, accountLoading, loadError, retryLoad } =
     useContext(AuthContext);
   const location = useLocation();
 
@@ -17,6 +17,10 @@ function ProtectedRoute({ children, adminOnly = false }) {
         state={{ from: location.pathname + location.search }}
       />
     );
+  }
+
+  if (accountLoading) {
+    return <p className="muted">Loading your account...</p>;
   }
 
   if (!user) {

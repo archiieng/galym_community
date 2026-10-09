@@ -19,6 +19,8 @@ export function AuthProvider({ children }) {
   // Set when the account could not be loaded for a reason other than an
   // ended session (that one signs the user out, see below).
   const [loadError, setLoadError] = useState("");
+  const [accountLoading, setAccountLoading] = useState(Boolean(token));
+  const [savedError, setSavedError] = useState("");
   const [attempt, setAttempt] = useState(0);
   // Opportunities with a save or un-save request still on its way.
   const pendingToggles = useRef(new Set());
@@ -28,16 +30,28 @@ export function AuthProvider({ children }) {
 
     let ignore = false;
 
-    Promise.all([getMe(), getSavedOpportunities()])
-      .then(([me, saved]) => {
+    getMe()
+      .then((me) => {
         if (ignore) return;
 
         setUser(me);
-        setSavedIds(new Set(saved.map((opportunity) => opportunity.id)));
         setLoadError("");
       })
       .catch((error) => {
         if (!ignore) setLoadError(error.message);
+      })
+      .finally(() => {
+        if (!ignore) setAccountLoading(false);
+      });
+
+    getSavedOpportunities()
+      .then((saved) => {
+        if (ignore) return;
+        setSavedIds(new Set(saved.map((opportunity) => opportunity.id)));
+        setSavedError("");
+      })
+      .catch((error) => {
+        if (!ignore) setSavedError(error.message);
       });
 
     return () => {
@@ -52,6 +66,8 @@ export function AuthProvider({ children }) {
     setUser(null);
     setSavedIds(NO_IDS);
     setLoadError("");
+    setAccountLoading(Boolean(newToken));
+    setSavedError("");
   }
 
   function login(newToken) {
@@ -123,7 +139,13 @@ export function AuthProvider({ children }) {
     setSavedIds,
     toggleSaved,
     loadError,
-    retryLoad: () => setAttempt((n) => n + 1),
+    accountLoading,
+    savedError,
+    retryLoad: () => {
+      setAccountLoading(true);
+      setLoadError("");
+      setAttempt((n) => n + 1);
+    },
     login,
     logout,
   };

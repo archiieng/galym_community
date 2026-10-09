@@ -35,9 +35,12 @@ public class UserService {
                                                 "User by id " + id + " does not exist"));
         return new UserResponse(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
+
     public UserResponse getUserByEmail(String email) {
-        var user = repository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        var user =
+                repository
+                        .findByEmail(email)
+                        .orElseThrow(() -> new EntityNotFoundException("User not found"));
         return UserResponse.from(user);
     }
 

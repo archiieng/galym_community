@@ -9,8 +9,8 @@ import next.galym_community.service.AuthService;
 import next.galym_community.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
@@ -35,6 +35,7 @@ public class AuthController {
         AuthResponse response = new AuthResponse(token);
         return ResponseEntity.ok(response);
     }
+
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(Authentication authentication) {
         return ResponseEntity.ok(userService.getUserByEmail(authentication.getName()));

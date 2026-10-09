@@ -9,16 +9,19 @@ target/
 .idea/
 *.iml
 
-# Environment variables
+# Environment variables and secrets
 .env
-.env.local
+.env.*
+!.env.example
+
+# Database backups and exports
+db-backups/
+*.backup
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Graphify output
+# Generated files
 graphify-out/
-
-# Playwright MCP browser logs, snapshots and screenshots
 .playwright-mcp/

@@ -1,18 +1,21 @@
 package next.galym_community.config;
 
 import jakarta.servlet.DispatcherType;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.List;
 import next.galym_community.model.enums.RoleGalym;
 import next.galym_community.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -36,14 +39,25 @@ public class SecurityConfig {
                 .exceptionHandling(
                         e ->
                                 e.authenticationEntryPoint(
-                                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                                                (request, response, exception) ->
+                                                        writeSecurityError(
+                                                                response,
+                                                                HttpStatus.UNAUTHORIZED,
+                                                                "Authentication is required"))
+                                        .accessDeniedHandler(
+                                                (request, response, exception) ->
+                                                        writeSecurityError(
+                                                                response,
+                                                                HttpStatus.FORBIDDEN,
+                                                                "You do not have permission to access this resource")))
                 .authorizeHttpRequests(
                         auth ->
                                 // Error pages are rendered in a second, unauthenticated
                                 // dispatch; without this every 400/403/404 turns into a 401.
                                 auth.dispatcherTypeMatchers(DispatcherType.ERROR)
                                         .permitAll()
-                                        .requestMatchers("/auth/**")
+                                        .requestMatchers(
+                                                HttpMethod.POST, "/auth/login", "/auth/register")
                                         .permitAll()
                                         .requestMatchers("/galym/**")
                                         .permitAll()
@@ -55,6 +69,15 @@ public class SecurityConfig {
                         jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private static void writeSecurityError(
+            HttpServletResponse response, HttpStatus status, String message) throws IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter()
+                .write("{\"status\":" + status.value() + ",\"message\":\"" + message + "\"}");
     }
 
     @Bean

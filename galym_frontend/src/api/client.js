@@ -11,7 +11,8 @@ export const SESSION_EXPIRED = "galym:session-expired";
 // The one place that talks to the backend: adds the token, parses JSON and
 // turns error responses into Error objects carrying the server's message.
 export async function request(path, { method = "GET", body } = {}) {
-  const token = path.startsWith("/auth/")
+  const pathname = path.split("?")[0].replace(/\/+$/, "");
+  const token = ["/auth/login", "/auth/register"].includes(pathname)
     ? null
     : localStorage.getItem("token");
 
@@ -25,16 +26,32 @@ export async function request(path, { method = "GET", body } = {}) {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-  if (response.status === 401 && token) {
-    window.dispatchEvent(new Event(SESSION_EXPIRED));
-    throw new Error("Your session has ended. Log in again to continue.");
+  const responseBody = await response.text();
+  let data = null;
+  if (responseBody) {
+    try {
+      data = JSON.parse(responseBody);
+    } catch {
+      data = responseBody;
+    }
   }
 
-  // Empty bodies (204, 403) parse to null.
-  const data = await response.json().catch(() => null);
-
   if (!response.ok) {
-    throw new Error(data?.message || `Request failed (${response.status})`);
+    const sessionExpired = response.status === 401 && token;
+    // An old request must not sign out a newer session.
+    if (sessionExpired && localStorage.getItem("token") === token) {
+      window.dispatchEvent(new Event(SESSION_EXPIRED));
+    }
+    const error = new Error(
+      sessionExpired
+        ? "Your session has ended. Log in again to continue."
+        : data?.message || `Request failed (${response.status}) for ${path}`,
+    );
+    error.path = path;
+    error.status = response.status;
+    error.body = data;
+    error.responseBody = responseBody;
+    throw error;
   }
 
   return data;
